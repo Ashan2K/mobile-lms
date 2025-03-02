@@ -26,7 +26,7 @@ This project is a **mobile-based Learning Management System (LMS)** designed for
 - Clone the repository:
   
   ```bash
-  git clone https://github.com/your-repo-url.git
+  git clone https://github.com/Ashan2K/mobile-lms.git
   cd LMS-Korean-Class
   ```
 - Install dependencies:
