@@ -12,9 +12,11 @@ app.get('/', (req, res) => {
     res.send('Hello World');
 });
 
-app.listen(PORT, () => {
-    console.log(`Listening on port ${PORT}`);
-});
 
 const router = require("./routes");
 app.use(router);
+
+
+app.listen(PORT, () => {
+    console.log(`Listening on port ${PORT}`);
+});
