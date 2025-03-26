@@ -1,4 +1,4 @@
-# Mobile-Based Learning Management System (LMS) for Korean Class
+# Mobile-Based Learning Management System (LMS) for Korean classes
 
 ## 📌 Project Overview
 This project is a **mobile-based Learning Management System (LMS)** designed for a **Korean language class**. The system streamlines student management, payment verification, and secure access to learning materials.
