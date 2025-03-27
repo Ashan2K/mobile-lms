@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart' as carousel;
+
 import 'exam_screen.dart';
 
 class DashboardView extends StatefulWidget {
@@ -10,15 +10,20 @@ class DashboardView extends StatefulWidget {
 }
 
 class _DashboardViewState extends State<DashboardView> {
-  final carousel.CarouselController _carouselController =
-      carousel.CarouselController();
-  int _currentCarouselIndex = 0;
+  final PageController _pageController = PageController();
+  int _currentPageIndex = 0;
 
   final List<String> _carouselItems = [
     'Slide 1',
     'Slide 2',
     'Slide 3',
   ];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,32 +45,26 @@ class _DashboardViewState extends State<DashboardView> {
               const SizedBox(height: 24),
 
               // Carousel Slider
-              carousel.CarouselSlider(
-                carouselController: _carouselController,
-                options: carousel.CarouselOptions(
-                  height: 180,
-                  enlargeCenterPage: true,
-                  autoPlay: true,
-                  aspectRatio: 16 / 9,
-                  autoPlayCurve: Curves.fastOutSlowIn,
-                  enableInfiniteScroll: true,
-                  autoPlayAnimationDuration: const Duration(milliseconds: 800),
-                  viewportFraction: 0.9,
-                  onPageChanged: (index, reason) {
+              SizedBox(
+                height: 180,
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (index) {
                     setState(() {
-                      _currentCarouselIndex = index;
+                      _currentPageIndex = index;
                     });
                   },
+                  itemCount: _carouselItems.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    );
+                  },
                 ),
-                items: _carouselItems.map((item) {
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  );
-                }).toList(),
               ),
               const SizedBox(height: 8),
 
@@ -80,7 +79,7 @@ class _DashboardViewState extends State<DashboardView> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.blue[700]!.withOpacity(
-                        _currentCarouselIndex == entry.key ? 0.9 : 0.2,
+                        _currentPageIndex == entry.key ? 0.9 : 0.2,
                       ),
                     ),
                   );
