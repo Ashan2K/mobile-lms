@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart';
+import 'package:carousel_slider/carousel_slider.dart' as carousel;
 import 'exam_screen.dart';
-import '../../components/custom_app_bar.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({Key? key}) : super(key: key);
@@ -11,7 +10,8 @@ class DashboardView extends StatefulWidget {
 }
 
 class _DashboardViewState extends State<DashboardView> {
-  final CarouselController _carouselController = CarouselController();
+  final carousel.CarouselController _carouselController =
+      carousel.CarouselController();
   int _currentCarouselIndex = 0;
 
   final List<String> _carouselItems = [
@@ -40,9 +40,9 @@ class _DashboardViewState extends State<DashboardView> {
               const SizedBox(height: 24),
 
               // Carousel Slider
-              CarouselSlider(
+              carousel.CarouselSlider(
                 carouselController: _carouselController,
-                options: CarouselOptions(
+                options: carousel.CarouselOptions(
                   height: 180,
                   enlargeCenterPage: true,
                   autoPlay: true,
