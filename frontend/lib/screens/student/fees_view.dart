@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../components/custom_app_bar.dart';
 
 class FeesView extends StatelessWidget {
   const FeesView({Key? key}) : super(key: key);
@@ -8,7 +7,6 @@ class FeesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),

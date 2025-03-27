@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/exam_question.dart';
-import '../services/exam_service.dart';
+import '../../models/exam_question.dart';
+import '../../services/exam_service.dart';
 import 'package:just_audio/just_audio.dart';
 
 class ExamScreen extends StatefulWidget {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/home_screen.dart';
+import 'package:frontend/screens/student/home_screen.dart';
 import 'package:frontend/services/base_url.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';

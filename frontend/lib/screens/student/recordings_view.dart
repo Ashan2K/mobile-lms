@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../components/custom_app_bar.dart';
 
 class RecordingsView extends StatelessWidget {
   const RecordingsView({Key? key}) : super(key: key);
@@ -7,7 +6,6 @@ class RecordingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

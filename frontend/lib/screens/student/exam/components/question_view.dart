@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/exam_question.dart';
+import '../../../../models/exam_question.dart';
 
 class QuestionView extends StatelessWidget {
   final ExamQuestion question;

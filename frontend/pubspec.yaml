@@ -29,9 +29,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/
-    - assets/audio/
     - lib/images/
-    - lib/assets/animations/
+
 
   

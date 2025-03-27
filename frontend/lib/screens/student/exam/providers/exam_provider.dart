@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import '../../../models/exam_question.dart';
-import '../../../services/exam_service.dart';
+import '../../../../models/exam_question.dart';
+import '../../../../services/exam_service.dart';
 
 class ExamProvider extends ChangeNotifier {
   final ExamService _examService = ExamService();

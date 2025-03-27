@@ -7,7 +7,17 @@ class ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: AppBar(
+          title: const Text(
+            "Profile",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: Colors.white,
+          leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black87),
+              onPressed: () {
+                Navigator.pop(context);
+              })),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -97,26 +107,6 @@ class ProfileView extends StatelessWidget {
                       '2001-01-01'),
                   _buildInfoItem(Icons.location_on_outlined, 'Address',
                       'matara, sri lanka'),
-
-                  const SizedBox(height: 32),
-
-                  // Course Information Section
-                  const Text(
-                    'Course Information',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E1E1E),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildInfoItem(Icons.class_outlined, 'Batch', 'Batch 23'),
-                  _buildInfoItem(
-                      Icons.school_outlined, 'Course', 'EPS-TOPIK Training'),
-                  _buildInfoItem(Icons.access_time, 'Class Time',
-                      'Evening (6:00 PM - 8:00 PM)'),
-                  _buildInfoItem(
-                      Icons.calendar_month, 'Enrollment Date', '2024-01-01'),
 
                   const SizedBox(height: 32),
 
