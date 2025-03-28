@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:frontend/components/custom_app_bar.dart';
 import 'package:frontend/screens/student/attendance_view.dart';
