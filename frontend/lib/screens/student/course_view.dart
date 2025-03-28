@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../components/custom_app_bar.dart';
 
 class CourseView extends StatelessWidget {
-  const CourseView({Key? key}) : super(key: key);
+  const CourseView({super.key});
 
   @override
   Widget build(BuildContext context) {

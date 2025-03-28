@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/components/custom_app_bar.dart';
+
 import 'package:table_calendar/table_calendar.dart';
 
 class ScheduleView extends StatefulWidget {

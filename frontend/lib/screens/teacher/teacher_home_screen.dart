@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/components/custom_app_bar.dart';
 import 'package:frontend/screens/teacher/schedule_view.dart';
+import 'package:frontend/screens/teacher/student_view.dart';
+import 'package:frontend/screens/teacher/mock_exam_view.dart';
+import 'package:frontend/screens/teacher/reports_view.dart';
+import 'package:frontend/screens/teacher/fees_view.dart';
+import 'package:frontend/screens/teacher/courses_view.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({Key? key}) : super(key: key);
@@ -10,173 +14,344 @@ class TeacherHomeScreen extends StatefulWidget {
 }
 
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
-  final List<Widget> _screen = [ScheduleView()];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Section
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.blue[700],
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white,
-                      child:
-                          Icon(Icons.person, size: 35, color: Colors.blue[700]),
+        appBar: AppBar(
+          title: const Text(
+            "Teacher Dashboard",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: Colors.white,
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu, color: Colors.black87),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            ),
+          ),
+        ),
+        drawer: SafeArea(
+          child: Drawer(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                // User Profile Section
+                UserAccountsDrawerHeader(
+                  accountName: const Text(
+                    'Teacher Name',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Welcome back,',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const Text(
-                            'Teacher Name',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                  ),
+                  accountEmail: const Text('teacher@example.com'),
+                  currentAccountPicture: CircleAvatar(
+                    backgroundColor: Colors.blue[100],
+                    child: const Icon(
+                      Icons.person,
+                      size: 40,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[700],
+                  ),
+                ),
+                // Navigation Items
+                ListTile(
+                  leading: const Icon(Icons.home),
+                  title: const Text('Dashboard'),
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.calendar_today),
+                  title: const Text('Schedule'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ScheduleView()),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.quiz),
+                  title: const Text('Mock Exams'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const MockExamView()),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.people),
+                  title: const Text('Students'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const StudentView()),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.analytics),
+                  title: const Text('Reports'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ReportsView()),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.payments),
+                  title: const Text('Fees'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const FeesView()),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.book),
+                  title: const Text('Courses'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const CoursesView()),
+                    );
+                  },
+                ),
+                const Divider(),
+                // Settings and Logout
+                ListTile(
+                  leading: const Icon(Icons.settings),
+                  title: const Text('Settings'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Navigate to settings
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.logout, color: Colors.red),
+                  title:
+                      const Text('Logout', style: TextStyle(color: Colors.red)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Implement logout functionality
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Welcome Section
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[700],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.white,
+                        child: Icon(Icons.person,
+                            size: 35, color: Colors.blue[700]),
                       ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Welcome back,',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const Text(
+                              'Teacher Name',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Quick Actions
+                const Text(
+                  'Quick Actions',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  children: [
+                    _buildActionCard(
+                      icon: Icons.calendar_today,
+                      title: 'Schedule',
+                      color: Colors.blue[100]!,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const ScheduleView()),
+                        );
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.quiz,
+                      title: 'Mock Exam',
+                      color: Colors.green[100]!,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const MockExamView()),
+                        );
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.people,
+                      title: 'Students',
+                      color: Colors.orange[100]!,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const StudentView()),
+                        );
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.analytics,
+                      title: 'Reports',
+                      color: Colors.purple[100]!,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const ReportsView()),
+                        );
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.payments,
+                      title: 'Fees',
+                      color: Colors.red[100]!,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const FeesView()),
+                        );
+                      },
+                    ),
+                    _buildActionCard(
+                      icon: Icons.book,
+                      title: 'Courses',
+                      color: Colors.teal[100]!,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const CoursesView()),
+                        );
+                      },
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Quick Actions
-              const Text(
-                'Quick Actions',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                // Upcoming Classes
+                const Text(
+                  'Upcoming Classes',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 3,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                children: [
-                  _buildActionCard(
-                    icon: Icons.calendar_today,
-                    title: 'Schedule',
-                    color: Colors.blue[100]!,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => _screen[0]),
-                      );
-                    },
-                  ),
-                  _buildActionCard(
-                    icon: Icons.quiz,
-                    title: 'Mock Exam',
-                    color: Colors.green[100]!,
-                    onTap: () {},
-                  ),
-                  _buildActionCard(
-                    icon: Icons.people,
-                    title: 'Students',
-                    color: Colors.orange[100]!,
-                    onTap: () {},
-                  ),
-                  _buildActionCard(
-                    icon: Icons.analytics,
-                    title: 'Reports',
-                    color: Colors.purple[100]!,
-                    onTap: () {},
-                  ),
-                  _buildActionCard(
-                    icon: Icons.payments,
-                    title: 'Fees',
-                    color: Colors.red[100]!,
-                    onTap: () {},
-                  ),
-                  _buildActionCard(
-                    icon: Icons.book,
-                    title: 'Courses',
-                    color: Colors.teal[100]!,
-                    onTap: () {},
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 16),
+                _buildUpcomingClassCard(
+                  subject: 'Korean Language',
+                  time: '10:00 AM - 11:30 AM',
+                  students: 15,
+                  onTap: () {},
+                ),
+                const SizedBox(height: 12),
+                _buildUpcomingClassCard(
+                  subject: 'Korean Essentials',
+                  time: '2:00 PM - 3:30 PM',
+                  students: 12,
+                  onTap: () {},
+                ),
+                const SizedBox(height: 24),
 
-              // Upcoming Classes
-              const Text(
-                'Upcoming Classes',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                // Recent Activities
+                const Text(
+                  'Recent Activities',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              _buildUpcomingClassCard(
-                subject: 'Korean Language',
-                time: '10:00 AM - 11:30 AM',
-                students: 15,
-                onTap: () {},
-              ),
-              const SizedBox(height: 12),
-              _buildUpcomingClassCard(
-                subject: 'Korean Essentials',
-                time: '2:00 PM - 3:30 PM',
-                students: 12,
-                onTap: () {},
-              ),
-              const SizedBox(height: 24),
-
-              // Recent Activities
-              const Text(
-                'Recent Activities',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 16),
+                _buildActivityCard(
+                  title: 'New Assignment Submitted',
+                  subtitle: '5 students submitted Korean Writing Assignment',
+                  time: '2 hours ago',
+                  icon: Icons.assignment_turned_in,
                 ),
-              ),
-              const SizedBox(height: 16),
-              _buildActivityCard(
-                title: 'New Assignment Submitted',
-                subtitle: '5 students submitted Korean Writing Assignment',
-                time: '2 hours ago',
-                icon: Icons.assignment_turned_in,
-              ),
-              const SizedBox(height: 12),
-              _buildActivityCard(
-                title: 'Class Attendance Updated',
-                subtitle: 'Updated attendance for Korean Language class',
-                time: '4 hours ago',
-                icon: Icons.check_circle,
-              ),
-            ],
+                const SizedBox(height: 12),
+                _buildActivityCard(
+                  title: 'Class Attendance Updated',
+                  subtitle: 'Updated attendance for Korean Language class',
+                  time: '4 hours ago',
+                  icon: Icons.check_circle,
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 
   Widget _buildActionCard({

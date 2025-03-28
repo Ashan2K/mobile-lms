@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart' as carousel;
 import 'package:frontend/components/custom_app_bar.dart';
 import 'package:frontend/screens/student/attendance_view.dart';
 import 'package:frontend/screens/student/course_view.dart';
@@ -10,7 +9,7 @@ import 'recordings_view.dart';
 import 'fees_view.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -18,15 +17,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  final carousel.CarouselController _carouselController =
-      carousel.CarouselController();
-  int _currentCarouselIndex = 0;
-
-  final List<String> _carouselItems = [
-    'Slide 1',
-    'Slide 2',
-    'Slide 3',
-  ];
 
   final List<Widget> _screens = [
     const DashboardView(),
