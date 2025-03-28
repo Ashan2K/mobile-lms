@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/student/home_screen.dart';
-import 'package:frontend/services/base_url.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:frontend/screens/teacher/teacher_home_screen.dart';
+import 'package:frontend/screens/fees_marker/fees_marker_home_screen.dart';
+import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/models/user_role.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -25,28 +25,34 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('$url/api/login'), // backend URL
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'email': _emailController.text,
-          'password': _passwordController.text,
-        }),
-      );
+      final user = await AuthService.login(
+          _emailController.text, _passwordController.text);
 
-      if (response.statusCode == 200) {
-        // Successfully received JWT
-        final data = json.decode(response.body);
-        String jwt = data['userCredential']['_tokenResponse']['idToken'];
-
-        // Store JWT in shared preferences or secure storage
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString('jwt', jwt);
-
-        // Navigate to home screen
-        Navigator.pushReplacementNamed(context, '/home');
+      if (user != null) {
+        // Navigate based on user role
+        switch (user.role) {
+          case UserRole.student:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+            );
+            break;
+          case UserRole.teacher:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const TeacherHomeScreen()),
+            );
+            break;
+          case UserRole.feesMarker:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const FeesMarkerHomeScreen()),
+            );
+            break;
+        }
       } else {
-        // Handle error from backend
         setState(() {
           _isLoading = false;
           _errorMessage = 'Invalid credentials or server error';
@@ -264,13 +270,6 @@ class _LoginScreenState extends State<LoginScreen> {
         height: MediaQuery.of(context).size.width * 0.08,
         width: MediaQuery.of(context).size.width * 0.08,
       ),
-    );
-  }
-
-  _loadHome() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => HomeScreen()),
     );
   }
 }

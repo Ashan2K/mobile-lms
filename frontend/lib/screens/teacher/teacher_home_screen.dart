@@ -5,6 +5,7 @@ import 'package:frontend/screens/teacher/mock_exam_view.dart';
 import 'package:frontend/screens/teacher/reports_view.dart';
 import 'package:frontend/screens/teacher/fees_view.dart';
 import 'package:frontend/screens/teacher/courses_view.dart';
+import 'package:frontend/services/auth_service.dart';
 
 class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({Key? key}) : super(key: key);
@@ -153,8 +154,39 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   title:
                       const Text('Logout', style: TextStyle(color: Colors.red)),
                   onTap: () {
-                    Navigator.pop(context);
-                    // TODO: Implement logout functionality
+                    showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                              title: const Text('Logout'),
+                              content: const Text(
+                                  'Are you sure you want to LogOut ?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context); // Navigate to login
+                                  },
+                                  child: const Text('Cancel',
+                                      style: TextStyle(color: Colors.black)),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    if (mounted) {
+                                      Navigator.pop(
+                                          context); // Close the dialog
+                                    }
+                                    await AuthService.logout();
+
+                                    Navigator.pushReplacementNamed(
+                                        context, '/login'); // Navigate to login
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red[700],
+                                  ),
+                                  child: const Text('Logout',
+                                      style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ));
                   },
                 ),
               ],

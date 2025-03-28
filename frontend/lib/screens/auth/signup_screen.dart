@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/screens/student/otp_screen.dart';
-import 'package:frontend/services/base_url.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:frontend/models/user_role.dart';
+import 'package:frontend/screens/auth/otp_screen.dart';
+import 'package:frontend/services/auth_service.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -38,21 +37,26 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('$url/api/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          //'firstName': _firstNameController.text,
-          //'lastName': _lastNameController.text,
-          'email': _emailController.text,
-          //'phoneNumber': _phoneNumber.phoneNumber,
-          'password': _passwordController.text,
-        }),
+      final success = await AuthService.signup(
+        firstName: _firstNameController.text,
+        lastName: _lastNameController.text,
+        email: _emailController.text,
+        phoneNumber: _phoneNumber.phoneNumber!,
+        password: _passwordController.text,
+        role: UserRole.student,
       );
 
-      if (response.statusCode == 201) {
+      if (success) {
         // Navigate to OTP screen
-        _handleSignup();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpScreen(
+              _phoneNumber.phoneNumber!,
+              phoneNumber: _phoneNumber,
+            ),
+          ),
+        );
       } else {
         setState(() {
           _isLoading = false;
@@ -64,39 +68,6 @@ class _SignupScreenState extends State<SignupScreen> {
         _isLoading = false;
         _errorMessage = 'Error: $error';
       });
-    }
-  }
-
-  void _handleSignup() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      try {
-        // ... (existing signup logic)
-
-        // After successful signup:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OtpScreen(
-              _phoneNumber.phoneNumber!,
-              phoneNumber: _phoneNumber,
-            ),
-          ),
-        );
-      } catch (e) {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 

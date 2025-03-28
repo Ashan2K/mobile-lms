@@ -1,9 +1,13 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:frontend/components/custom_app_bar.dart';
 import 'package:frontend/screens/student/attendance_view.dart';
 import 'package:frontend/screens/student/course_view.dart';
 import 'package:frontend/screens/student/mark_attendance.dart';
 import 'package:frontend/screens/student/profile_view.dart';
+import 'package:frontend/services/auth_service.dart';
 import 'dashboard_view.dart';
 import 'recordings_view.dart';
 import 'fees_view.dart';
@@ -161,7 +165,38 @@ class _HomeScreenState extends State<HomeScreen> {
                 title:
                     const Text('Logout', style: TextStyle(color: Colors.red)),
                 onTap: () {
-                  Navigator.pop(context);
+                  showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                            title: const Text('Logout'),
+                            content:
+                                const Text('Are you sure you want to LogOut ?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context); // Navigate to login
+                                },
+                                child: const Text('Cancel',
+                                    style: TextStyle(color: Colors.black)),
+                              ),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  if (mounted) {
+                                    Navigator.pop(context); // Close the dialog
+                                  }
+                                  await AuthService.logout();
+
+                                  Navigator.pushReplacementNamed(
+                                      context, '/login'); // Navigate to login
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red[700],
+                                ),
+                                child: const Text('Logout',
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ));
                 },
               ),
             ],
