@@ -1,38 +1,66 @@
-
 const {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  sendEmailVerification,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  PhoneAuthProvider,
+  signInWithCredential
 } = require('../config/firebase');
 
 const auth = getAuth();
 
 class FirebaseAuthController {
   registerUser(req, res) {
-    const { email, password } = req.body;
-    if (!email || !password) {
+    const { fname, lname, email, password, phoneNumber } = req.body;
+    if (!email || !password || !phoneNumber) {
       return res.status(422).json({
         email: "Email is required",
         password: "Password is required",
+        phoneNumber: "Phone number is required"
       });
     }
+
+    // Create user with email and password
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
-        sendEmailVerification(auth.currentUser)
-          .then(() => {
-            res.status(201).json({ message: "Verification email sent! User created successfully!" });
+        // Send phone verification
+        const phoneProvider = new PhoneAuthProvider(auth);
+        phoneProvider.verifyPhoneNumber(phoneNumber)
+          .then((verificationId) => {
+            res.status(201).json({ 
+              message: "Verification code sent! Please verify your phone number.",
+              verificationId 
+            });
           })
           .catch((error) => {
             console.error(error);
-            res.status(500).json({ error: "Error sending email verification" });
+            res.status(500).json({ error: "Error sending phone verification" });
           });
       })
       .catch((error) => {
         const errorMessage = error.message || "An error occurred while registering user";
         res.status(500).json({ error: errorMessage });
+      });
+  }
+
+  verifyPhoneNumber(req, res) {
+    const { verificationId, verificationCode } = req.body;
+    if (!verificationId || !verificationCode) {
+      return res.status(422).json({
+        verificationId: "Verification ID is required",
+        verificationCode: "Verification code is required"
+      });
+    }
+
+    const credential = PhoneAuthProvider.credential(verificationId, verificationCode);
+    signInWithCredential(auth, credential)
+      .then((userCredential) => {
+        res.status(200).json({ message: "Phone number verified successfully!" });
+      })
+      .catch((error) => {
+        console.error(error);
+        res.status(500).json({ error: "Error verifying phone number" });
       });
   }
 

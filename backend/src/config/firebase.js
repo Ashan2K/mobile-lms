@@ -24,9 +24,9 @@ const {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  sendEmailVerification,
-  sendPasswordResetEmail
-
+  sendPasswordResetEmail,
+  PhoneAuthProvider,
+  signInWithCredential
 } = require("firebase/auth");
 
 module.exports = {
@@ -34,7 +34,8 @@ module.exports = {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  sendEmailVerification,
   sendPasswordResetEmail,
+  PhoneAuthProvider,
+  signInWithCredential,
   admin
 };
