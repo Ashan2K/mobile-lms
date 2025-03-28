@@ -41,14 +41,7 @@ This project is a **mobile-based Learning Management System (LMS)** designed for
   ```bash
   flutter run
   ```
-
-  ## 📌 Project Flow
-  - Planning & Requirement Analysis – Define project scope and features.
-  - Design & Prototyping – UI/UX design, system architecture.
-  - Development – Flutter UI, Firebase integration, backend setup.
-  - Testing & Debugging – Unit testing, security checks, and usability testing.
-  - Deployment & Maintenance – Deploy on Firebase Hosting, ongoing support.
-    
+  
  ## 📚 Contributors
 - TG/2021/1063 - K.K.R.Ashan (Full Stack Developer)
 - TG/2021/1024 - Buddhika Naullage (Full Stack Developer)
