@@ -163,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
-                        onPressed: _loadHome,
+                        onPressed: _signInWithEmailPassword,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue[700],
                           padding: const EdgeInsets.symmetric(vertical: 16),

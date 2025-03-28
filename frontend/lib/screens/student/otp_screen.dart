@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'verification_success_screen.dart';
 
 class OtpScreen extends StatefulWidget {
-  final String phoneNumber;
+  final PhoneNumber phoneNumber;
 
-  const OtpScreen({
+  const OtpScreen(
+    String s, {
     Key? key,
     required this.phoneNumber,
   }) : super(key: key);
