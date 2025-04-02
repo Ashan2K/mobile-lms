@@ -7,6 +7,9 @@ class UserModel {
   final String email;
   final UserRole role;
   final String? phoneNumber;
+  final String? status;
+  final String? imageUrl;
+  final String? stdId;
 
   UserModel({
     required this.id,
@@ -15,11 +18,17 @@ class UserModel {
     required this.email,
     required this.role,
     this.phoneNumber,
+    this.status,
+    this.imageUrl,
+    this.stdId,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'],
+      id: json['uid'],
+      stdId: json['stdId'],
+      imageUrl: json['imageUrl'],
+      status: json['status'],
       fname: json['fname'],
       lname: json['lname'],
       email: json['email'],
@@ -33,12 +42,25 @@ class UserModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'uid': id,
+      'stdId': stdId,
+      'imageUrl': imageUrl,
+      'status': status,
       'fname': fname,
       'lname': lname,
       'email': email,
       'role': role.toString().split('.').last,
       'phoneNumber': phoneNumber,
+    };
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': stdId,
+      'name': fname + " " + lname,
+      'status': status,
+      'imageUrl': imageUrl,
+      'uid': id
     };
   }
 }

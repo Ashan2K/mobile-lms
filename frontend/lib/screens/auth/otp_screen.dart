@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:intl_phone_number_input/intl_phone_number_input.dart';
+import 'package:frontend/screens/auth/login_screen.dart';
+import 'package:frontend/services/auth_service.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'verification_success_screen.dart';
 
 class OtpScreen extends StatefulWidget {
-  final PhoneNumber phoneNumber;
+  final String phoneNumber;
+  final String userId;
 
-  const OtpScreen(
-    String s, {
-    Key? key,
-    required this.phoneNumber,
-  }) : super(key: key);
+  const OtpScreen({Key? key, required this.phoneNumber, required this.userId})
+      : super(key: key);
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -28,6 +27,15 @@ class _OtpScreenState extends State<OtpScreen> {
   void initState() {
     super.initState();
     startTimer();
+    _sendOtp();
+  }
+
+  Future<void> _sendOtp() async {
+    try {
+      await (AuthService.sendOtp(widget.phoneNumber));
+    } catch (e) {
+      debugPrint('Error sending OTP: $e');
+    }
   }
 
   void startTimer() {
@@ -65,26 +73,25 @@ class _OtpScreenState extends State<OtpScreen> {
     }
   }
 
-  void verifyOtp() {
-    if (currentText.length == 4) {
+  void verifyOtp() async {
+    if (currentText.length == 6) {
       setState(() {
         isLoading = true;
       });
-      // Simulate OTP verification
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          setState(() {
-            isLoading = false;
-          });
-          // Navigate to success screen
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const VerificationSuccessScreen(),
-            ),
-          );
-        }
+      await AuthService.verifyOtp(
+          widget.phoneNumber, currentText, widget.userId);
+      setState(() {
+        isLoading = false;
       });
+      // Navigate to the next screen if OTP verification is successful
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LoginScreen(),
+          ),
+        );
+      }
     }
   }
 
@@ -142,17 +149,17 @@ class _OtpScreenState extends State<OtpScreen> {
 
                 // OTP Input
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: PinCodeTextField(
                     appContext: context,
-                    length: 4,
+                    length: 6,
                     obscureText: false,
                     animationType: AnimationType.fade,
                     pinTheme: PinTheme(
                       shape: PinCodeFieldShape.box,
                       borderRadius: BorderRadius.circular(12),
-                      fieldHeight: 65,
-                      fieldWidth: 65,
+                      fieldHeight: 55,
+                      fieldWidth: 55,
                       activeFillColor: Colors.white,
                       inactiveFillColor: Colors.white,
                       selectedFillColor: Colors.white,
@@ -222,7 +229,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
-                        onPressed: currentText.length == 4 ? verifyOtp : null,
+                        onPressed: currentText.length == 6 ? verifyOtp : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue[700],
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -250,7 +257,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   void dispose() {
-    textEditingController.dispose();
+    //textEditingController.dispose();
     super.dispose();
   }
 }

@@ -37,7 +37,7 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      final success = await AuthService.signup(
+      final result = await AuthService.signup(
         firstName: _firstNameController.text,
         lastName: _lastNameController.text,
         email: _emailController.text,
@@ -45,16 +45,15 @@ class _SignupScreenState extends State<SignupScreen> {
         password: _passwordController.text,
         role: UserRole.student,
       );
-
-      if (success) {
+      debugPrint(result['data']['phoneNumber']);
+      if (result != null) {
         // Navigate to OTP screen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => OtpScreen(
-              _phoneNumber.phoneNumber!,
-              phoneNumber: _phoneNumber,
-            ),
+                phoneNumber: result['data']['phoneNumber'],
+                userId: result['data']['uid']),
           ),
         );
       } else {
@@ -167,10 +166,12 @@ class _SignupScreenState extends State<SignupScreen> {
                         onInputChanged: (PhoneNumber number) {
                           _phoneNumber = number;
                         },
+                        initialValue:
+                            PhoneNumber(isoCode: 'LK', dialCode: '+94'),
                         selectorConfig: const SelectorConfig(
                           selectorType: PhoneInputSelectorType.DROPDOWN,
-                          showFlags: true,
                           setSelectorButtonAsPrefixIcon: true,
+                          showFlags: false,
                         ),
                         ignoreBlank: false,
                         autoValidateMode: AutovalidateMode.disabled,
