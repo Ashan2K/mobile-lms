@@ -9,83 +9,130 @@ const {
 } = require('../config/firebase');
 
 const { admin } = require('../config/firebase');
+const e = require('express');
+require('../config/twilio');
+
+
+
+
+
+const client = twilio(twilioConfig.accountSid, twilioConfig.authToken);
 
 const auth = getAuth();
 
 class FirebaseAuthController {
-  registerUser(req, res) {
-    const { fname, lname, email, password, phoneNumber, role } = req.body;
-    
-    if (!email || !password || !fname || !lname || !role) {
-      return res.status(422).json({
-        email: "Email is required",
-        password: "Password is required",
-        fname: "First name is required",
-        lname: "Last name is required",
-        role: "Role is required"
-      });
+  // Register User (Step 1)
+  registerUser = async (req, res) =>{
+    const { fname, lname, email, phoneNumber, password, role } = req.body;
+
+    // Validate input data
+    if (!email || !password || !fname || !lname || !role || !phoneNumber) {
+      return res.status(422).json({ error: "All fields are required" });
     }
 
-    // Create user with email and password
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(async (userCredential) => {
-        try {
-          // Create user document in Firestore
-          await admin.firestore().collection('users').doc(userCredential.user.uid).set({
-            id: userCredential.user.uid,
-            fname,
-            lname,
-            email,
-            role,
-            phoneNumber: phoneNumber || null,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-          });
+    try {
+      let formattedPhoneNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
 
-          // Send phone verification if phone number is provided
-          if (phoneNumber) {
-            const phoneProvider = new PhoneAuthProvider(auth);
-            phoneProvider.verifyPhoneNumber(phoneNumber)
-              .then((verificationId) => {
-                res.status(201).json({ 
-                  message: "User created and verification code sent! Please verify your phone number.",
-                  verificationId,
-                  user: {
-                    id: userCredential.user.uid,
-                    fname,
-                    lname,
-                    email,
-                    role,
-                    phoneNumber
-                  }
-                });
-              })
-              .catch((error) => {
-                console.error(error);
-                res.status(500).json({ error: "Error sending phone verification" });
-              });
-          } else {
-            res.status(201).json({
-              message: "User created successfully!",
-              user: {
-                id: userCredential.user.uid,
-                fname,
-                lname,
-                email,
-                role,
-                phoneNumber: null
-              }
-            });
-          }
-        } catch (error) {
-          console.error(error);
-          res.status(500).json({ error: "Error creating user document" });
-        }
-      })
-      .catch((error) => {
-        const errorMessage = error.message || "An error occurred while registering user";
-        res.status(500).json({ error: errorMessage });
+      // Create user with Firebase Admin
+      const userRecord = await admin.auth().createUser({
+        email,
+        phoneNumber: formattedPhoneNumber,
+        password,
+        disabled: true // User remains disabled until OTP verification
       });
+
+      const studentId = await this.generateStudentId();
+
+      // Save user data to Firestore
+      await admin.firestore().collection('users').doc(userRecord.uid).set({
+        fname,
+        lname,
+        email,
+        phoneNumber: formattedPhoneNumber,
+        role,
+        studentId,
+        status:'active',
+        imageUrl: null,
+        emailVerified: true,
+        phoneVerified: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      return res.status(200).json({
+        message: "User registered successfully. OTP required for activation.",
+        data: { uid: userRecord.uid, phoneNumber: formattedPhoneNumber }
+      });
+
+    } catch (error) {
+      console.error('Registration error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  // Function to generate auto-incrementing studentId
+  async generateStudentId() {
+    const studentIdDocRef = admin.firestore().collection('settings').doc('studentIdCounter');
+
+    try {
+      // Use a Firestore transaction to ensure atomic updates
+      const studentId = await admin.firestore().runTransaction(async (transaction) => {
+        const doc = await transaction.get(studentIdDocRef);
+        if (!doc.exists) {
+          // If the document does not exist, create it with an initial value
+          transaction.set(studentIdDocRef, { currentId: 1000 });
+          return 1000; // Starting value
+        }
+
+        const currentId = doc.data().currentId;
+        const newStudentId = currentId + 1;
+
+        // Update the counter for the next studentId
+        transaction.update(studentIdDocRef, { currentId: newStudentId });
+
+        return newStudentId;
+      });
+
+      return `KSTD${studentId}`;
+
+    } catch (error) {
+      console.error('Error generating studentId:', error);
+      throw new Error('Error generating student ID');
+    }
+  }
+
+  // Verify Phone Number (Step 2)
+  async createOtp(req, res) {
+    const { phoneNumber } = req.body;
+
+    if (!phoneNumber) {
+      return res.status(400).json({ error: "Phone number is required" });
+    }
+
+    // Generate a random 6-digit OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+
+    // Store OTP in Firestore or your database (make sure it's stored temporarily)
+    try {
+      const otpExpireTime = Date.now() + 5 * 60 * 1000; // OTP expires in 5 minutes
+      await admin.firestore().collection('otps').doc(phoneNumber).set({
+        otp,
+        expireAt: otpExpireTime
+      });
+
+      // Send OTP via Twilio
+      await client.messages.create({
+        body: `Your OTP is ${otp}. It is valid for 5 minutes.`,
+        from: twilioConfig.fromNumber,
+        to: phoneNumber
+      });
+
+      return res.status(200).json({
+        message: "OTP sent successfully."
+      });
+    } catch (error) {
+      console.error("Error generating OTP:", error);
+      return res.status(500).json({ error: "Failed to send OTP" });
+    }
   }
 
   verifyPhoneNumber(req, res) {
