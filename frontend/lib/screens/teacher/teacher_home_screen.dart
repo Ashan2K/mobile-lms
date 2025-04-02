@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/models/user_model.dart';
 import 'package:frontend/screens/teacher/schedule_view.dart';
 import 'package:frontend/screens/teacher/student_view.dart';
 import 'package:frontend/screens/teacher/mock_exam_view.dart';
@@ -15,6 +16,22 @@ class TeacherHomeScreen extends StatefulWidget {
 }
 
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
+  UserModel? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  // Load user data from SharedPreferences
+  Future<void> _loadUser() async {
+    final user = await AuthService.getUserFromSharedPreferences();
+    setState(() {
+      _user = user;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,14 +57,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               children: [
                 // User Profile Section
                 UserAccountsDrawerHeader(
-                  accountName: const Text(
-                    'Teacher Name',
-                    style: TextStyle(
+                  accountName: Text(
+                    _user?.fname ?? '',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
                   ),
-                  accountEmail: const Text('teacher@example.com'),
+                  accountEmail: Text(_user?.email ?? ''),
                   currentAccountPicture: CircleAvatar(
                     backgroundColor: Colors.blue[100],
                     child: const Icon(
@@ -215,7 +232,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                             size: 35, color: Colors.blue[700]),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -226,9 +243,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                                 fontSize: 16,
                               ),
                             ),
-                            const Text(
-                              'Teacher Name',
-                              style: TextStyle(
+                            Text(
+                              _user?.fname ?? '',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
