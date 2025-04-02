@@ -1,5 +1,6 @@
 require("dotenv").config();
 const firebase = require("firebase/app");
+const functions = require('firebase-functions');
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -17,6 +18,19 @@ const serviceAccount = require("../firebaseService.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
+});
+
+exports.enableUserAfterVerification = functions.https.onCall(async (data, context) => {
+  const userId = data.uid;
+
+  try {
+    // Enable the user or perform any other necessary actions.
+    await admin.auth().updateUser(userId, { disabled: false });
+    return { success: true };
+  } catch (error) {
+    console.error('Error enabling user:', error);
+    throw new functions.https.HttpsError('internal', 'Unable to enable user');
+  }
 });
 
 const {
