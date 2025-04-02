@@ -10,8 +10,7 @@ router.post('/login', firebaseAuthController.loginUser);
 router.post('/logout', firebaseAuthController.logoutUser);
 router.post('/reset-password', firebaseAuthController.resetPassword);
 router.post('/verify-phone', firebaseAuthController.verifyPhoneNumber);
-router.post('/send-otp',firebaseAuthController.sendOTP);
-router.post('/verify-otp',firebaseAuthController.verifyOTP);
+
 
 // Protected routes
 router.get('/profile', verifyToken, firebaseAuthController.getUserProfile);

@@ -10,19 +10,16 @@ const {
 
 const { admin } = require('../config/firebase');
 const e = require('express');
-require('../config/twilio');
+const twilio = require('twilio');
+require("dotenv").config();
 
-
-
-
-
-const client = twilio(twilioConfig.accountSid, twilioConfig.authToken);
+const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 const auth = getAuth();
 
 class FirebaseAuthController {
   // Register User (Step 1)
-  registerUser = async (req, res) =>{
+  registerUser = async (req, res) => {
     const { fname, lname, email, phoneNumber, password, role } = req.body;
 
     // Validate input data
@@ -51,7 +48,7 @@ class FirebaseAuthController {
         phoneNumber: formattedPhoneNumber,
         role,
         studentId,
-        status:'active',
+        status: 'active',
         imageUrl: null,
         emailVerified: true,
         phoneVerified: false,
@@ -122,7 +119,8 @@ class FirebaseAuthController {
       // Send OTP via Twilio
       await client.messages.create({
         body: `Your OTP is ${otp}. It is valid for 5 minutes.`,
-        from: twilioConfig.fromNumber,
+        from: process.env.TWILIO_PHONE_NUMBER,
+
         to: phoneNumber
       });
 
@@ -135,25 +133,49 @@ class FirebaseAuthController {
     }
   }
 
-  verifyPhoneNumber(req, res) {
-    const { verificationId, verificationCode } = req.body;
-    if (!verificationId || !verificationCode) {
-      return res.status(422).json({
-        verificationId: "Verification ID is required",
-        verificationCode: "Verification code is required"
-      });
+  async verifyOtp(req, res) {
+    const { phoneNumber, otp } = req.body;
+
+    if (!phoneNumber || !otp) {
+      return res.status(400).json({ error: "Phone number and OTP are required" });
     }
 
-    const credential = PhoneAuthProvider.credential(verificationId, verificationCode);
-    signInWithCredential(auth, credential)
-      .then((userCredential) => {
-        res.status(200).json({ message: "Phone number verified successfully!" });
-      })
-      .catch((error) => {
-        console.error(error);
-        res.status(500).json({ error: "Error verifying phone number" });
-      });
+    try {
+      // Retrieve OTP from Firestore or your database
+      const otpDoc = await admin.firestore().collection('otps').doc(phoneNumber).get();
+
+      if (!otpDoc.exists) {
+        return res.status(400).json({ error: "OTP not found for this phone number" });
+      }
+
+      const storedOtp = otpDoc.data()?.otp;
+      const otpExpireAt = otpDoc.data()?.expireAt;
+
+      // Check if OTP has expired
+      if (Date.now() > otpExpireAt) {
+        return res.status(400).json({ error: "OTP has expired" });
+      }
+
+      // Verify if OTP matches
+      if (storedOtp === otp) {
+        // OTP is correct, proceed with your desired action (e.g., enable user)
+        await admin.firestore().collection('users').doc(phoneNumber).update({
+          phoneVerified: true
+        });
+
+        // Optionally, you can delete the OTP from the database after successful verification
+        await admin.firestore().collection('otps').doc(phoneNumber).delete();
+
+        return res.status(200).json({ message: "OTP verified successfully" });
+      } else {
+        return res.status(400).json({ error: "Invalid OTP" });
+      }
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      return res.status(500).json({ error: "Failed to verify OTP" });
+    }
   }
+
 
   loginUser(req, res) {
     const { email, password } = req.body;
@@ -178,7 +200,7 @@ class FirebaseAuthController {
           }
 
           const userData = userDoc.data();
-          
+
           // Create custom token
           const customToken = await admin.auth().createCustomToken(userCredential.user.uid, {
             role: userData.role
@@ -192,9 +214,19 @@ class FirebaseAuthController {
             maxAge: 24 * 60 * 60 * 1000 // 24 hours
           });
 
-          res.status(200).json({ 
+          res.status(200).json({
             message: "User logged in successfully",
-            user: userData,
+            user: {
+              uid: userCredential.user.uid,
+              email: userCredential.user.email,
+              phoneNumber: userCredential.user.phoneNumber,
+              role: userData.role,
+              fname: userData.fname,
+              lname: userData.lname,
+              stdId: userData.studentId,
+              imageUrl: userData.imageUrl,
+              status: userData.status,
+            },
             token: customToken // Also send token in response body
           });
         } catch (error) {
@@ -228,7 +260,7 @@ class FirebaseAuthController {
         email: "Email is required"
       });
     }
-    
+
     sendPasswordResetEmail(auth, email)
       .then(() => {
         res.status(200).json({ message: "Password reset email sent successfully!" });
