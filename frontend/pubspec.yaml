@@ -20,6 +20,13 @@ dependencies:
   provider: ^6.1.1
   qr_flutter: ^4.1.0
   table_calendar: ^3.2.0
+  firebase_core: ^2.18.0
+  firebase_auth: ^4.11.1
+  cloud_functions: ^4.4.1
+  cloud_firestore: ^4.15.1
+  connectivity_plus: ^4.0.0
+  
+
 
 dev_dependencies:
   flutter_test:

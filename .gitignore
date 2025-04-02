@@ -1,3 +1,5 @@
 node_modules
 .env
 FirebaseService.json
+firebase.json
+google-services.json
