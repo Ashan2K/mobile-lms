@@ -58,7 +58,7 @@ void main() {
     test('Failed login should return null', () async {
       // Arrange
       when(mockClient.post(
-        Uri.parse('http://localhost:3000/api/login'),
+        Uri.parse('http://localhost:5000/api/login'),
         headers: {'Content-Type': 'application/json'},
         body: anyNamed('body'),
       )).thenAnswer((_) async => http.Response('Invalid credentials', 401));

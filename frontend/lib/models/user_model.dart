@@ -24,6 +24,17 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    UserRole role;
+    try {
+      role = UserRole.values.firstWhere(
+        (e) => e.toString() == 'UserRole.${json['role']}',
+        orElse: () =>
+            UserRole.student, // Default to 'student' if role is invalid
+      );
+    } catch (e) {
+      role = UserRole.student; // Fallback to 'student' if role is invalid
+    }
+
     return UserModel(
       id: json['uid'],
       stdId: json['stdId'],
@@ -32,10 +43,7 @@ class UserModel {
       fname: json['fname'],
       lname: json['lname'],
       email: json['email'],
-      role: UserRole.values.firstWhere(
-        (e) => e.toString() == 'UserRole.${json['role']}',
-        orElse: () => UserRole.student,
-      ),
+      role: role,
       phoneNumber: json['phoneNumber'],
     );
   }
@@ -56,7 +64,7 @@ class UserModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'id': stdId,
+      'stdId': stdId,
       'name': fname + " " + lname,
       'status': status,
       'imageUrl': imageUrl,

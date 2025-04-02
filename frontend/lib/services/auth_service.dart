@@ -3,7 +3,6 @@ import 'package:frontend/models/user_model.dart';
 import 'package:frontend/models/user_role.dart';
 import 'package:frontend/services/base_url.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,7 +28,6 @@ class AuthService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', token);
         await prefs.setString('user', json.encode(user.toJson()));
-        debugPrint(prefs.getString('user'));
 
         return user;
       }

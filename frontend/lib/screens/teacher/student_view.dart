@@ -173,7 +173,7 @@ class _StudentViewState extends State<StudentView> {
                       ),
                     ),
                     Text(
-                      student['id'],
+                      student['stdId'],
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
