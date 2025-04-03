@@ -20,6 +20,9 @@ dependencies:
   provider: ^6.1.1
   qr_flutter: ^4.1.0
   table_calendar: ^3.2.0
+  get: ^4.7.2
+  image_picker: ^1.0.7
+  firebase_core: ^2.24.2
 
 dev_dependencies:
   flutter_test:

@@ -1,0 +1,2 @@
+C:/Users/sjkav/OneDrive/Desktop/projectpro/mobile-lms/frontend/android/app/.cxx/Debug/276y644g/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/sjkav/OneDrive/Desktop/projectpro/mobile-lms/frontend/android/app/.cxx/Debug/276y644g/armeabi-v7a/CMakeFiles/rebuild_cache.dir
