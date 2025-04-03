@@ -13,6 +13,7 @@ router.post('/api/create-otp', firebaseAuthController.createOtp);
 router.post('/api/verify-otp', firebaseAuthController.verifyOtp);
 router.post('/api/load-student',studentManageController.loadStudent);
 router.post('/api/block-student', studentManageController.blockUnblockStudent);
+router.post('/api/getprofile',firebaseAuthController. getUserProfile);
 
 
 

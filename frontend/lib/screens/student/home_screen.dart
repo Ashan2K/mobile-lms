@@ -1,10 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:frontend/components/custom_app_bar.dart';
+import 'package:frontend/models/user_model.dart';
 import 'package:frontend/screens/student/attendance_view.dart';
 import 'package:frontend/screens/student/course_view.dart';
 import 'package:frontend/screens/student/mark_attendance.dart';
 import 'package:frontend/screens/student/profile_view.dart';
 import 'package:frontend/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_view.dart';
 import 'recordings_view.dart';
 import 'fees_view.dart';
@@ -19,6 +23,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
+  UserModel? _profile;
+
   final List<Widget> _screens = [
     const DashboardView(),
     const RecordingsView(),
@@ -26,6 +32,23 @@ class _HomeScreenState extends State<HomeScreen> {
     const MarkView(),
     const AttendanceView()
   ];
+
+  Future<UserModel?> _loadProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    String userJson = prefs.getString("user") ?? "{}";
+    if (userJson != null) {
+      Map<String, dynamic> userMap = json.decode(userJson);
+      UserModel user = UserModel.fromJson(userMap);
+    } else {
+      // If no token or user data is found, return null
+      return null;
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,16 +125,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       backgroundImage: AssetImage('lib/images/profile.jpeg'),
                     ),
                     const SizedBox(height: 10),
-                    const Text(
-                      'Ashan',
-                      style: TextStyle(
+                    Text(
+                      _profile?.fname ?? '',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      'Batch 23 Student',
+                      _profile?.stdId ?? '',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.8),
                         fontSize: 14,

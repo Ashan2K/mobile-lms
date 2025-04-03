@@ -24,6 +24,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     _loadUser();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   // Load user data from SharedPreferences
   Future<void> _loadUser() async {
     final user = await AuthService.getUserFromSharedPreferences();
