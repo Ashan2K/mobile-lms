@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class AddCourseForm extends StatefulWidget {
@@ -11,16 +12,23 @@ class AddCourseForm extends StatefulWidget {
 class _AddCourseFormState extends State<AddCourseForm> {
   final _formKey = GlobalKey<FormState>();
   final _courseTitleController = TextEditingController();
+  final _courseCodeController = TextEditingController();
   final _batchNumberController = TextEditingController();
   final _instituteController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _priceController = TextEditingController();
   DateTime? _selectedDate;
+  DateTime? _startDate;
   TimeOfDay? _selectedTime;
 
   @override
   void dispose() {
     _courseTitleController.dispose();
+    _courseCodeController.dispose();
     _batchNumberController.dispose();
     _instituteController.dispose();
+    _descriptionController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
@@ -34,6 +42,20 @@ class _AddCourseFormState extends State<AddCourseForm> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectStartDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null && picked != _startDate) {
+      setState(() {
+        _startDate = picked;
       });
     }
   }
@@ -82,6 +104,10 @@ class _AddCourseFormState extends State<AddCourseForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Basic Information Section
+                _buildSectionHeader('Basic Information'),
+                const SizedBox(height: 8),
+
                 // Course Title
                 TextFormField(
                   controller: _courseTitleController,
@@ -95,6 +121,26 @@ class _AddCourseFormState extends State<AddCourseForm> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter course title';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Course Code
+                TextFormField(
+                  controller: _courseCodeController,
+                  decoration: InputDecoration(
+                    labelText: 'Course Code',
+                    hintText: 'e.g., MATH101, PHYS202',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.code),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter course code';
                     }
                     return null;
                   },
@@ -139,7 +185,60 @@ class _AddCourseFormState extends State<AddCourseForm> {
                 ),
                 const SizedBox(height: 16),
 
-                // Date and Time Selection
+                // Course Price
+                TextFormField(
+                  controller: _priceController,
+                  decoration: InputDecoration(
+                    labelText: 'Course Price',
+                    hintText: 'Enter price in your local currency',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.attach_money),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter course price';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // Description Section
+                _buildSectionHeader('Course Description'),
+                const SizedBox(height: 8),
+
+                // Description
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    labelText: 'Course Description',
+                    hintText: 'Enter a brief description of the course',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.description),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter course description';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // Course Start Date Section
+                _buildSectionHeader('Course Start Date'),
+                const SizedBox(height: 8),
+
+                // Start Date Selection
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -150,7 +249,49 @@ class _AddCourseFormState extends State<AddCourseForm> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Schedule',
+                        'When does the course begin?',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () => _selectStartDate(context),
+                        icon: const Icon(Icons.calendar_today),
+                        label: Text(
+                          _startDate == null
+                              ? 'Select Course Start Date'
+                              : DateFormat('MMM dd, yyyy').format(_startDate!),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Class Schedule Section
+                _buildSectionHeader('Class Schedule'),
+                const SizedBox(height: 8),
+
+                // Class Date and Time Selection
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'When is the next class?',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -165,7 +306,7 @@ class _AddCourseFormState extends State<AddCourseForm> {
                               icon: const Icon(Icons.calendar_today),
                               label: Text(
                                 _selectedDate == null
-                                    ? 'Select Date'
+                                    ? 'Select Class Date'
                                     : DateFormat('MMM dd, yyyy')
                                         .format(_selectedDate!),
                               ),
@@ -202,7 +343,7 @@ class _AddCourseFormState extends State<AddCourseForm> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Submit Button
                 ElevatedButton(
@@ -225,6 +366,25 @@ class _AddCourseFormState extends State<AddCourseForm> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue[100]!),
+      ),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.blue[700],
         ),
       ),
     );
