@@ -3,3 +3,6 @@ node_modules
 FirebaseService.json
 firebase.json
 google-services.json
+frontend/windows/flutter/generated_plugins.cmake
+frontend/windows/flutter/generated_plugin_registrant.cc
+frontend/macos/Flutter/GeneratedPluginRegistrant.swift
