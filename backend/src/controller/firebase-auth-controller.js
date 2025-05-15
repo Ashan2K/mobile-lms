@@ -12,6 +12,9 @@ const { admin } = require('../config/firebase');
 const e = require('express');
 const twilio = require('twilio');
 require("dotenv").config();
+const crypto = require('crypto');
+const QRCode = require('qrcode');
+const { url } = require('inspector');
 
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
@@ -20,7 +23,7 @@ const auth = getAuth();
 class FirebaseAuthController {
   // Register User (Step 1)
   registerUser = async (req, res) => {
-    const { fname, lname, email, phoneNumber, password, role } = req.body;
+    const { fname, lname, email, phoneNumber, password, role,deviceId } = req.body;
 
     // Validate input data
     if (!email || !password || !fname || !lname || !role || !phoneNumber) {
@@ -40,6 +43,9 @@ class FirebaseAuthController {
 
       const studentId = await this.generateStudentId();
 
+
+      
+
       // Save user data to Firestore
       await admin.firestore().collection('users').doc(userRecord.uid).set({
         fname,
@@ -52,7 +58,8 @@ class FirebaseAuthController {
         imageUrl: null,
         emailVerified: true,
         phoneVerified: false,
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        deviceId
       });
 
       return res.status(200).json({
@@ -62,6 +69,7 @@ class FirebaseAuthController {
 
     } catch (error) {
       console.error('Registration error:', error);
+
       return res.status(500).json({ error: error.message });
     }
   }
@@ -96,6 +104,17 @@ class FirebaseAuthController {
       throw new Error('Error generating student ID');
     }
   }
+
+  async generateQRCode(uid) {
+    QRCode.toDataURL(uid, (err, url) => {
+      if (err) {
+        console.error('Error generating QR code:', err);
+      } else {
+        console.log('QR Code URL:', url);
+        return url;  
+      }
+    });
+  };
 
   // Verify Phone Number (Step 2)
   async createOtp(req, res) {
@@ -133,8 +152,8 @@ class FirebaseAuthController {
     }
   }
 
-  async verifyOtp(req, res) {
-    const { phoneNumber, otp } = req.body;
+  verifyOtp = async (req, res)=> {
+    const { phoneNumber, otp, userId } = req.body;
 
     if (!phoneNumber || !otp) {
       return res.status(400).json({ error: "Phone number and OTP are required" });
@@ -152,15 +171,24 @@ class FirebaseAuthController {
       const otpExpireAt = otpDoc.data()?.expireAt;
 
       // Check if OTP has expired
-      if (Date.now() > otpExpireAt) {
-        return res.status(400).json({ error: "OTP has expired" });
-      }
+      // if (Date.now() < otpExpireAt) {
+      //   return res.status(400).json({ error: "OTP has expired" });
+      // }
 
       // Verify if OTP matches
       if (storedOtp === otp) {
+
+        await admin.auth().updateUser(userId, {
+          disabled: false // Enable the user after OTP verification
+        });
+
         // OTP is correct, proceed with your desired action (e.g., enable user)
-        await admin.firestore().collection('users').doc(phoneNumber).update({
+        await admin.firestore().collection('users').doc(userId).update({
           phoneVerified: true
+        });
+
+        await admin.firestore().collection('users').doc(userId).update({
+          qrCodeUrl: await this.generateQRCode(userId)
         });
 
         // Optionally, you can delete the OTP from the database after successful verification
@@ -175,10 +203,21 @@ class FirebaseAuthController {
       return res.status(500).json({ error: "Failed to verify OTP" });
     }
   }
-
+  async generateQRCode(studentId) {
+    return new Promise((resolve, reject) => {
+      QRCode.toDataURL(studentId, (err, url) => {
+        if (err) {
+          reject('Error generating QR code: ' + err);
+        } else {
+          resolve(url);  // Make sure the URL is resolved here
+        }
+      });
+    });
+  }
+  
 
   loginUser(req, res) {
-    const { email, password } = req.body;
+    const { email, password, deviceId } = req.body;
     if (!email || !password) {
       return res.status(422).json({
         email: "Email is required",
@@ -200,6 +239,16 @@ class FirebaseAuthController {
           }
 
           const userData = userDoc.data();
+
+          if(userData.role == "student"){
+            if(deviceId != userData.deviceId){
+              console.error("device not Match")
+              return res.status(409).json({error: "device not Match"});
+            }
+
+          }
+
+
 
           // Create custom token
           const customToken = await admin.auth().createCustomToken(userCredential.user.uid, {
@@ -226,6 +275,8 @@ class FirebaseAuthController {
               stdId: userData.studentId,
               imageUrl: userData.imageUrl,
               status: userData.status,
+              qrCodeUrl: userData.qrCodeUrl,
+              deviceId:userData.deviceId
             },
             token: customToken // Also send token in response body
           });

@@ -24,7 +24,7 @@ class CourseController {
                 createdAt: admin.firestore.FieldValue.serverTimestamp(), 
             });
 
-            res.status(201).send('Course created successfully'); // Send success response
+            res.status(200).send('Course created successfully'); // Send success response
 
         } catch (error) {
             console.error('Error creating course: ', error); // Log the error to help with debugging
