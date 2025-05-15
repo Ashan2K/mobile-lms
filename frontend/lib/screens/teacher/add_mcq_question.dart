@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../models/mcq_question.dart';
 import '../../config/constants.dart';
+import '../student/exam/components/question_number_panel.dart';
 
 class AddMCQQuestion extends StatefulWidget {
   final List<MCQQuestion>? initialQuestions;
@@ -106,106 +107,188 @@ class _AddMCQQuestionState extends State<AddMCQQuestion> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            'Question ${_currentQuestionIndex + 1}/${AppConstants.questionsCount}'),
+        title: const Text(
+          'Add MCQ Questions',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              _saveCurrentQuestion();
+              if (_questions.every((q) => q != null)) {
+                final nonNullQuestions =
+                    _questions.where((q) => q != null).map((q) => q!).toList();
+                Navigator.pop(context, nonNullQuestions);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content:
+                        Text('Please complete all questions before submitting'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.check),
+            label: const Text('Submit'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.green[700],
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            color: Colors.grey[100],
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(AppConstants.questionsCount, (index) {
-                  final isAnswered = _questions[index] != null;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: ElevatedButton(
-                      onPressed: () => _navigateToQuestion(index),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _currentQuestionIndex == index
-                            ? Colors.blue[700]
-                            : isAnswered
-                                ? Colors.green
-                                : Colors.grey[300],
-                        foregroundColor: _currentQuestionIndex == index
-                            ? Colors.white
-                            : isAnswered
-                                ? Colors.white
-                                : Colors.black87,
-                        minimumSize: const Size(40, 40),
-                        padding: EdgeInsets.zero,
-                      ),
-                      child: Text('${index + 1}'),
-                    ),
-                  );
-                }),
-              ),
+          // Progress bar
+          LinearProgressIndicator(
+            value: (_currentQuestionIndex + 1) / AppConstants.questionsCount,
+            backgroundColor: Colors.grey[200],
+            valueColor: AlwaysStoppedAnimation<Color>(
+              _questions.where((q) => q != null).length >=
+                      AppConstants.questionsCount
+                  ? Colors.green
+                  : Colors.blue,
             ),
           ),
+          // Question number panel
+          Container(
+            height: 80,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey[200]!,
+                  width: 1,
+                ),
+              ),
+            ),
+            child: QuestionNumberPanel(
+              totalQuestions: AppConstants.questionsCount,
+              currentQuestionIndex: _currentQuestionIndex,
+              answeredQuestions: List.generate(
+                _questions.length,
+                (index) =>
+                    _questions[index] != null &&
+                    _questions[index]!.question.isNotEmpty &&
+                    _questions[index]!
+                        .options
+                        .every((option) => option.isNotEmpty),
+              ),
+              onQuestionSelected: (index) {
+                _navigateToQuestion(index);
+              },
+              canNavigateToQuestion: (_) => true,
+            ),
+          ),
+          // Question counter and delete
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Question ${_currentQuestionIndex + 1} of ${AppConstants.questionsCount}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (_questions.length > 1)
+                  IconButton(
+                    icon: const Icon(Icons.delete),
+                    color: Colors.red[700],
+                    onPressed: () {
+                      setState(() {
+                        if (_questions.length <= 1)
+                          return; // Prevent deleting last question
+                        _questions.removeAt(_currentQuestionIndex);
+                        if (_currentQuestionIndex >= _questions.length) {
+                          _currentQuestionIndex = _questions.length - 1;
+                        }
+                        if (_questions.isEmpty) {
+                          // Add a new empty question if all are deleted
+                          _questions.add(MCQQuestion(
+                            id: DateTime.now()
+                                .millisecondsSinceEpoch
+                                .toString(),
+                            question: '',
+                            options: List.generate(4, (_) => ''),
+                            correctAnswerIndex: 0,
+                            imageUrl: null,
+                          ));
+                          _currentQuestionIndex = 0;
+                        }
+                      });
+                    },
+                  ),
+              ],
+            ),
+          ),
+          // Current question
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextFormField(
-                      controller: _questionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Question',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a question';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _pickImage,
-                      icon: const Icon(Icons.image),
-                      label: const Text('Attach Image'),
-                    ),
-                    if (_imageFile != null) ...[
-                      const SizedBox(height: 8),
-                      Image.file(
-                        _imageFile!,
-                        height: 200,
-                        fit: BoxFit.cover,
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _imageFile = null;
-                          });
-                        },
-                        child: const Text('Remove Image'),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    ...List.generate(4, (index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
+              padding: const EdgeInsets.all(16),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextFormField(
+                          controller: _questionController,
+                          decoration: const InputDecoration(
+                            labelText: 'Question',
+                            border: UnderlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a question';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _pickImage,
+                          icon: const Icon(Icons.image),
+                          label: const Text('Attach Image'),
+                        ),
+                        if (_imageFile != null) ...[
+                          const SizedBox(height: 8),
+                          Image.file(
+                            _imageFile!,
+                            height: 200,
+                            fit: BoxFit.cover,
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _imageFile = null;
+                              });
+                            },
+                            child: const Text('Remove Image'),
+                          ),
+                        ],
+                        const Divider(),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: 4,
+                          itemBuilder: (context, index) {
+                            return RadioListTile<int>(
+                              title: TextFormField(
                                 controller: _optionControllers[index],
                                 decoration: InputDecoration(
-                                  labelText: 'Option ${index + 1}',
-                                  border: const OutlineInputBorder(),
+                                  hintText: 'Option ${index + 1}',
+                                  border: const UnderlineInputBorder(),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -214,8 +297,6 @@ class _AddMCQQuestionState extends State<AddMCQQuestion> {
                                   return null;
                                 },
                               ),
-                            ),
-                            Radio<int>(
                               value: index,
                               groupValue: _correctAnswerIndex,
                               onChanged: (value) {
@@ -223,62 +304,52 @@ class _AddMCQQuestionState extends State<AddMCQQuestion> {
                                   _correctAnswerIndex = value!;
                                 });
                               },
-                            ),
-                          ],
+                            );
+                          },
                         ),
-                      );
-                    }),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        if (_currentQuestionIndex > 0)
-                          ElevatedButton.icon(
-                            onPressed: () =>
-                                _navigateToQuestion(_currentQuestionIndex - 1),
-                            icon: const Icon(Icons.arrow_back),
-                            label: const Text('Previous'),
-                          ),
-                        if (_currentQuestionIndex <
-                            AppConstants.questionsCount - 1)
-                          ElevatedButton.icon(
-                            onPressed: () =>
-                                _navigateToQuestion(_currentQuestionIndex + 1),
-                            icon: const Icon(Icons.arrow_forward),
-                            label: const Text('Next'),
-                          ),
-                        if (_currentQuestionIndex ==
-                            AppConstants.questionsCount - 1)
-                          ElevatedButton(
-                            onPressed: () {
-                              _saveCurrentQuestion();
-                              if (_questions.every((q) => q != null)) {
-                                // Convert List<MCQQuestion?> to List<MCQQuestion>
-                                final nonNullQuestions = _questions
-                                    .where((q) => q != null)
-                                    .map((q) => q!)
-                                    .toList();
-                                Navigator.pop(context, nonNullQuestions);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'Please complete all questions before submitting'),
-                                  ),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text('Submit All Questions'),
-                          ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
+            ),
+          ),
+          // Navigation buttons
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _currentQuestionIndex > 0
+                      ? () => _navigateToQuestion(_currentQuestionIndex - 1)
+                      : null,
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Previous'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    foregroundColor: Colors.black87,
+                  ),
+                ),
+                Text(
+                  '${_currentQuestionIndex + 1}/${_questions.length}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed:
+                      _currentQuestionIndex < AppConstants.questionsCount - 1
+                          ? () => _navigateToQuestion(_currentQuestionIndex + 1)
+                          : null,
+                  icon: const Icon(Icons.arrow_forward),
+                  label: const Text('Next'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[700],
+                  ),
+                ),
+              ],
             ),
           ),
         ],

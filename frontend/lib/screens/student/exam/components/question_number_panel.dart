@@ -27,7 +27,9 @@ class QuestionNumberPanel extends StatelessWidget {
             totalQuestions,
             (index) {
               final isSelected = index == currentQuestionIndex;
-              final hasAnswer = answeredQuestions[index];
+              final hasAnswer = index < answeredQuestions.length
+                  ? answeredQuestions[index]
+                  : false;
               final isDisabled = !canNavigateToQuestion(index);
 
               return Container(

@@ -373,9 +373,11 @@ class _StudentViewState extends State<StudentView> {
                           showDialog(
                             context: context,
                             builder: (context) => AlertDialog(
-                              title: Text(student['status'] == 'active'
-                                  ? 'Block Student'
-                                  : 'Unblock Student'),
+                              title: Text(
+                                student['status'] == 'active'
+                                    ? 'Block Student'
+                                    : 'Unblock Student',
+                              ),
                               content: Text(
                                 student['status'] == 'active'
                                     ? 'Are you sure you want to block this student?'
@@ -416,25 +418,31 @@ class _StudentViewState extends State<StudentView> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         child: Text(
-                          student['status'] == 'active'
-                              ? 'Block Student'
-                              : 'Unblock Student',
-                        ),
+                            student['status'] == 'active'
+                                ? 'Block Student'
+                                : 'Unblock Student',
+                            style: TextStyle(
+                              color: Colors.white,
+                            )),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: Implement remove restriction
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange[700],
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: const Text('Remove Restriction'),
-                      ),
+                          onPressed: () {
+                            // TODO: Implement remove restriction
+                            Navigator.pop(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange[700],
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Text(
+                            'Remove Restriction',
+                            style: TextStyle(
+                              color: Colors.white,
+                            ),
+                          )),
                     ),
                   ],
                 ),
