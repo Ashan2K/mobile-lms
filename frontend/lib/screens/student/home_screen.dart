@@ -5,9 +5,10 @@ import 'package:frontend/components/custom_app_bar.dart';
 import 'package:frontend/models/user_model.dart';
 import 'package:frontend/screens/student/attendance_view.dart';
 import 'package:frontend/screens/student/course_view.dart';
-import 'package:frontend/screens/student/mark_attendance.dart';
+import 'package:frontend/screens/student/mark_view.dart';
 import 'package:frontend/screens/student/profile_view.dart';
 import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dashboard_view.dart';
 import 'recordings_view.dart';
@@ -39,15 +40,46 @@ class _HomeScreenState extends State<HomeScreen> {
     if (userJson != null) {
       Map<String, dynamic> userMap = json.decode(userJson);
       UserModel user = UserModel.fromJson(userMap);
+      print(user.fname);
+      return user;
     } else {
       // If no token or user data is found, return null
       return null;
     }
   }
 
+  Future<void> _handleLogout() async {
+    try {
+      await AuthService.logout();
+      if (!mounted) return;
+
+      // Use pushAndRemoveUntil to clear the navigation stack
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/login',
+        (Route<dynamic> route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error during logout: $e')),
+      );
+    }
+  }
+
   @override
   void dispose() {
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    NotificationService.getAndStoreFcmToken();
+    _loadProfile().then((profile) {
+      setState(() {
+        _profile = profile;
+      });
+    });
   }
 
   @override
@@ -126,7 +158,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      _profile?.fname ?? '',
+                      '${_profile?.fname ?? ''} ${_profile?.lname ?? ''}'
+                          .trim(),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -193,21 +226,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const Text('Are you sure you want to LogOut ?'),
                             actions: [
                               TextButton(
-                                onPressed: () {
+                                onPressed: () async {
+                                  final prefs =
+                                      await SharedPreferences.getInstance();
+                                  await prefs.setBool('is_logged_in', false);
                                   Navigator.pop(context); // Navigate to login
                                 },
                                 child: const Text('Cancel',
                                     style: TextStyle(color: Colors.black)),
                               ),
                               ElevatedButton(
-                                onPressed: () async {
+                                onPressed: () {
                                   if (mounted) {
                                     Navigator.pop(context); // Close the dialog
                                   }
-                                  await AuthService.logout();
-
-                                  Navigator.pushReplacementNamed(
-                                      context, '/login'); // Navigate to login
+                                  _handleLogout();
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.red[700],

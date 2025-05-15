@@ -1,8 +1,55 @@
-import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
-class FeesView extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:frontend/models/user_model.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
+class FeesView extends StatefulWidget {
   const FeesView({Key? key}) : super(key: key);
+
+  @override
+  State<FeesView> createState() => _FeesViewState();
+}
+
+class _FeesViewState extends State<FeesView> {
+  UserModel? _profile;
+  String? qrCodeBase64;
+
+  Future<UserModel?> _loadProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    String userJson = prefs.getString("user") ?? "{}";
+    if (userJson != null) {
+      Map<String, dynamic> userMap = json.decode(userJson);
+      UserModel user = UserModel.fromJson(userMap);
+      debugPrint(user.qrCode);
+      return user;
+    } else {
+      // If no token or user data is found, return null
+      return null;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile().then((profile) {
+      setState(() {
+        _profile = profile;
+      });
+      if (profile != null) {
+        _loadQRCode();
+      }
+    });
+  }
+
+  Future<void> _loadQRCode() async {
+    // Replace with the actual Base64 string you received from the backend
+    qrCodeBase64 = _profile!.qrCode; // Your base64 string here
+
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,11 +93,9 @@ class FeesView extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: QrImageView(
-                        data: 'https://your-qr-code-data-here',
-                        version: QrVersions.auto,
-                        size: 200.0,
-                      ),
+                      child: qrCodeBase64 == null
+                          ? const CircularProgressIndicator()
+                          : _buildQRCodeImage(qrCodeBase64!),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
@@ -349,5 +394,11 @@ class FeesView extends StatelessWidget {
         const Divider(height: 1),
       ],
     );
+  }
+
+  Widget _buildQRCodeImage(String base64String) {
+    final String base64Data = base64String.split(',').last;
+    final Uint8List bytes = base64Decode(base64Data);
+    return Image.memory(bytes);
   }
 }

@@ -21,15 +21,13 @@ class CourseModel {
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
     return CourseModel(
-      courseName: json['courseName'],
-      courseCode: json['courseCode'],
-      description: json['description'],
-      status: json['status'],
-      schedule: json['schedule'],
-      startDate: DateTime.parse(json['startDate']),
-      price: double.parse(json['price'].toString()),
-      creatDate: DateTime.parse(json['creatDate']),
-    );
+        courseName: json['courseName'],
+        courseCode: json['courseCode'],
+        description: json['description'],
+        status: json['status'],
+        schedule: json['schedule'],
+        startDate: DateTime.parse(json['startDate']),
+        price: double.parse(json['price'].toString()));
   }
 
   Map<String, dynamic> toJson() {
@@ -41,6 +39,7 @@ class CourseModel {
       'schedule': schedule,
       'startDate': startDate.toIso8601String(),
       'price': price,
+      'createdAt': creatDate?.toIso8601String(),
     };
   }
 

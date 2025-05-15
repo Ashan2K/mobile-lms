@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/models/user_role.dart';
 import 'package:frontend/screens/auth/otp_screen.dart';
@@ -23,6 +26,19 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  Future<String> getDeviceId() async {
+    final deviceInfo = DeviceInfoPlugin();
+
+    if (Platform.isAndroid) {
+      final android = await deviceInfo.androidInfo;
+      return android.id;
+    } else if (Platform.isIOS) {
+      final ios = await deviceInfo.iosInfo;
+      return ios.identifierForVendor ?? 'unknown';
+    }
+    return 'unknown_device';
+  }
+
   Future<void> _signUp() async {
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() {
@@ -37,14 +53,16 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
+      final deviceId = await getDeviceId();
+
       final result = await AuthService.signup(
-        firstName: _firstNameController.text,
-        lastName: _lastNameController.text,
-        email: _emailController.text,
-        phoneNumber: _phoneNumber.phoneNumber!,
-        password: _passwordController.text,
-        role: UserRole.student,
-      );
+          firstName: _firstNameController.text,
+          lastName: _lastNameController.text,
+          email: _emailController.text,
+          phoneNumber: _phoneNumber.phoneNumber!,
+          password: _passwordController.text,
+          role: UserRole.student,
+          deviceId: deviceId);
       debugPrint(result['data']['phoneNumber']);
       if (result != null) {
         // Navigate to OTP screen
@@ -97,7 +115,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   // Logo section
                   Center(
                     child: Container(
-                      height: MediaQuery.of(context).size.width * 0.35,
+                      height: MediaQuery.of(context).size.width * 0.25,
                       child: Image.asset('lib/images/koreanlogo.png'),
                     ),
                   ),

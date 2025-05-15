@@ -14,11 +14,7 @@ class RecordingsView extends StatelessWidget {
             children: [
               const Text(
                 'Recordings',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E1E1E),
-                ),
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
 
@@ -52,10 +48,7 @@ class RecordingsView extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF1E1E1E),
-            ),
+            style: const TextStyle(fontSize: 16, color: Color(0xFF1E1E1E)),
           ),
         ),
       ],

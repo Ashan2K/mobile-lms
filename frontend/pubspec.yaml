@@ -25,6 +25,13 @@ dependencies:
   cloud_functions: ^4.4.1
   cloud_firestore: ^4.15.1
   connectivity_plus: ^4.0.0
+  get: ^4.7.2
+  image_picker: ^1.0.7
+  firebase_messaging: ^14.7.10
+  flutter_local_notifications: ^16.3.0
+  permission_handler: ^11.3.1
+  mobile_scanner: ^6.0.7
+  device_info_plus: ^10.0.0
   
 
 

@@ -50,10 +50,11 @@ class _StudentViewState extends State<StudentView> {
     try {
       final response = await studentManage.blockUnblockStudent(uid);
       if (response.statusCode == 200) {
-        setState(() {
-          initState();
-        });
-
+        if (mounted) {
+          setState(() {
+            _loadStudent();
+          });
+        }
         return true;
       } else {
         return false;
@@ -67,6 +68,12 @@ class _StudentViewState extends State<StudentView> {
   void initState() {
     super.initState();
     _loadStudent();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -219,88 +226,352 @@ class _StudentViewState extends State<StudentView> {
       BuildContext context, Map<String, dynamic> student) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: Icon(Icons.info, color: Colors.blue[700]),
-                title: Text('View Details'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Navigate to student details page
-                },
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 8),
+                height: 4,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              ListTile(
-                leading: student['status'] == 'active'
-                    ? Icon(Icons.block, color: Colors.red[700])
-                    : Icon(Icons.check_circle, color: Colors.green[700]),
-                title: Text(student['status'] == 'active'
-                    ? 'Block Student'
-                    : 'Unblock Student'),
-                onTap: () {
-                  showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                            title: Text(student['status'] == 'active'
-                                ? 'Blocked'
-                                : 'Unblock'),
-                            content: Text(student['status'] == 'active'
-                                ? 'Are you sure you want to Block this user ?'
-                                : 'Are you sure you want to Unblock this user ?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('Cancel',
-                                    style: TextStyle(color: Colors.black)),
+              // Profile Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Profile Image
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.blue[100],
+                      backgroundImage: student['imageUrl'] != null
+                          ? NetworkImage(student['imageUrl'])
+                          : null,
+                      child: student['imageUrl'] == null
+                          ? Text(
+                              _getInitials(student),
+                              style: TextStyle(
+                                fontSize: 30,
+                                color: Colors.blue[700],
+                                fontWeight: FontWeight.bold,
                               ),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  if (mounted) {
-                                    Navigator.pop(context);
-                                    Navigator.pop(context);
-                                    _blockUnblockUser(student['uid']);
-                                  }
-                                  setState(() {
-                                    _loadStudent();
-                                  });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: student['status'] == 'active'
-                                      ? Colors.red[700]
-                                      : Colors.green[700],
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    // Name
+                    Text(
+                      student['name'],
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Student ID
+                    Text(
+                      student['stdId'] ?? 'No ID',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Status Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: student['status'] == 'active'
+                            ? Colors.green[100]
+                            : Colors.red[100],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        student['status'] ?? 'Unknown',
+                        style: TextStyle(
+                          color: student['status'] == 'active'
+                              ? Colors.green[700]
+                              : Colors.red[700],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // Student Details
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDetailItem(
+                        icon: Icons.email_outlined,
+                        title: 'Email',
+                        value: student['email'] ?? 'No email',
+                      ),
+                      _buildDetailItem(
+                        icon: Icons.phone_outlined,
+                        title: 'Phone',
+                        value: student['phoneNumber'] ?? 'No phone',
+                      ),
+                      _buildDetailItem(
+                        icon: Icons.qr_code,
+                        title: 'QR Code',
+                        value: student['qrCodeUrl'] ?? 'No QR Code',
+                        isQR: true,
+                      ),
+                      _buildDetailItem(
+                        icon: Icons.devices,
+                        title: 'Device ID',
+                        value: student['deviceId'] ?? 'No device ID',
+                        isEditable: true,
+                        onEdit: () {
+                          // TODO: Implement device ID update
+                          _showUpdateDeviceIdDialog(context, student);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Action Buttons
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text(student['status'] == 'active'
+                                  ? 'Block Student'
+                                  : 'Unblock Student'),
+                              content: Text(
+                                student['status'] == 'active'
+                                    ? 'Are you sure you want to block this student?'
+                                    : 'Are you sure you want to unblock this student?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cancel'),
                                 ),
-                                child: Text(
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    Navigator.pop(context); // Close dialog
+                                    Navigator.pop(
+                                        context); // Close bottom sheet
+                                    await _blockUnblockUser(student['uid']);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        student['status'] == 'active'
+                                            ? Colors.red[700]
+                                            : Colors.green[700],
+                                  ),
+                                  child: Text(
                                     student['status'] == 'active'
                                         ? 'Block'
                                         : 'Unblock',
-                                    style:
-                                        const TextStyle(color: Colors.white)),
-                              ),
-                            ],
-                          ));
-                },
-              ),
-              ListTile(
-                leading:
-                    Icon(Icons.warning, color: Color.fromARGB(255, 198, 1, 1)),
-                title: Text('Remove Restriction'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Navigate to edit student page
-                },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: student['status'] == 'active'
+                              ? Colors.red[700]
+                              : Colors.green[700],
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text(
+                          student['status'] == 'active'
+                              ? 'Block Student'
+                              : 'Unblock Student',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // TODO: Implement remove restriction
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange[700],
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Remove Restriction'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         );
       },
     );
+  }
+
+  Widget _buildDetailItem({
+    required IconData icon,
+    required String title,
+    required String value,
+    bool isEditable = false,
+    bool isQR = false,
+    VoidCallback? onEdit,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 24,
+            color: Colors.blue[700],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        value,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    if (isEditable)
+                      IconButton(
+                        icon: const Icon(Icons.edit, size: 20),
+                        onPressed: onEdit,
+                        color: Colors.blue[700],
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    if (isQR && value != 'No QR Code')
+                      IconButton(
+                        icon: const Icon(Icons.qr_code_scanner, size: 20),
+                        onPressed: () {
+                          // TODO: Implement QR code view/scan
+                        },
+                        color: Colors.blue[700],
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showUpdateDeviceIdDialog(
+      BuildContext context, Map<String, dynamic> student) {
+    final TextEditingController deviceIdController = TextEditingController(
+      text: student['deviceId'],
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Update Device ID'),
+        content: TextField(
+          controller: deviceIdController,
+          decoration: const InputDecoration(
+            labelText: 'Device ID',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              // TODO: Implement device ID update API call
+              Navigator.pop(context);
+              // Show success message
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Device ID updated successfully'),
+                ),
+              );
+            },
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to safely get initials
+  String _getInitials(Map<String, dynamic> student) {
+    String firstInitial =
+        (student['fname'] ?? '').isNotEmpty ? student['fname'][0] : '';
+    String lastInitial =
+        (student['lname'] ?? '').isNotEmpty ? student['lname'][0] : '';
+    return (firstInitial + lastInitial).toUpperCase();
+  }
+
+  // Helper method to safely get full name
+  String _getFullName(Map<String, dynamic> student) {
+    String firstName = student['fname'] ?? '';
+    String lastName = student['lname'] ?? '';
+    if (firstName.isEmpty && lastName.isEmpty) {
+      return 'Unknown Student';
+    }
+    return '${firstName.trim()} ${lastName.trim()}'.trim();
   }
 }

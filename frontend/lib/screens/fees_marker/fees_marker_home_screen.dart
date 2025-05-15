@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/components/logout_dialogbox.dart';
+import 'package:frontend/screens/fees_marker/scan_view.dart';
 
 class FeesMarkerHomeScreen extends StatefulWidget {
   const FeesMarkerHomeScreen({Key? key}) : super(key: key);
@@ -70,8 +72,8 @@ class _FeesMarkerHomeScreenState extends State<FeesMarkerHomeScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.people),
-                title: const Text('Students'),
+                leading: const Icon(Icons.qr_code_scanner),
+                title: const Text('QR Scanner'),
                 onTap: () {
                   Navigator.pop(context);
                   // TODO: Navigate to student list
@@ -100,8 +102,10 @@ class _FeesMarkerHomeScreenState extends State<FeesMarkerHomeScreen> {
                 title:
                     const Text('Logout', style: TextStyle(color: Colors.red)),
                 onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Implement logout functionality
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) => const LogOutDialogBox(),
+                  );
                 },
               ),
             ],
@@ -186,10 +190,16 @@ class _FeesMarkerHomeScreenState extends State<FeesMarkerHomeScreen> {
                     onTap: () {},
                   ),
                   _buildActionCard(
-                    icon: Icons.people,
-                    title: 'Students',
+                    icon: Icons.qr_code_scanner,
+                    title: 'Quick Scan',
                     color: Colors.orange[100]!,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ScanView(),
+                          ));
+                    },
                   ),
                   _buildActionCard(
                     icon: Icons.analytics,

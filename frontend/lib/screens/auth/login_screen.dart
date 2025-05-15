@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/screens/student/home_screen.dart';
 import 'package:frontend/screens/teacher/teacher_home_screen.dart';
@@ -17,6 +20,19 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  Future<String> getDeviceId() async {
+    final deviceInfo = DeviceInfoPlugin();
+
+    if (Platform.isAndroid) {
+      final android = await deviceInfo.androidInfo;
+      return android.id;
+    } else if (Platform.isIOS) {
+      final ios = await deviceInfo.iosInfo;
+      return ios.identifierForVendor ?? 'unknown';
+    }
+    return 'unknown_device';
+  }
+
   // Send credentials to the backend and get the JWT
   Future<void> _signInWithEmailPassword() async {
     setState(() {
@@ -24,12 +40,13 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
+    final deviceId = await getDeviceId();
+
     try {
       final user = await AuthService.login(
-          _emailController.text, _passwordController.text);
+          _emailController.text, _passwordController.text, deviceId);
 
       if (user != null) {
-        // Navigate based on user role
         switch (user.role) {
           case UserRole.student:
             Navigator.pushReplacement(
@@ -52,16 +69,11 @@ class _LoginScreenState extends State<LoginScreen> {
             );
             break;
         }
-      } else {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Invalid credentials or server error';
-        });
       }
     } catch (error) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Error: $error';
+        _errorMessage = error.toString().replaceAll('Exception: ', '');
       });
     }
   }

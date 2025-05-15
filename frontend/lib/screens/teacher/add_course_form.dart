@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:frontend/models/course_model.dart';
+import 'package:frontend/services/course_service.dart';
+import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 
 class AddCourseForm extends StatefulWidget {
@@ -72,13 +75,52 @@ class _AddCourseFormState extends State<AddCourseForm> {
     }
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement form submission
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Course added successfully!')),
-      );
-      Navigator.pop(context);
+      try {
+        final response = await CourseService().addCourse(
+          CourseModel(
+            courseName: _courseTitleController.text,
+            courseCode: _courseCodeController.text,
+            description: _descriptionController.text,
+            status: 'Upcoming', // Fixed typo: 'Upcomming' -> 'Upcoming'
+            schedule:
+                '${_selectedDate?.toIso8601String()} ${_selectedTime?.format(context)}',
+            startDate: _startDate!,
+            price: double.parse(_priceController.text),
+          ),
+        );
+
+        if (response == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Course added successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to add course. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        // Clear the form fields after submission
+        _courseTitleController.clear();
+        _courseCodeController.clear();
+        _batchNumberController.clear();
+        _instituteController.clear();
+        _descriptionController.clear();
+        _priceController.clear();
+        setState(() {
+          _selectedDate = null;
+          _startDate = null;
+          _selectedTime = null;
+        });
+      }
     }
   }
 
@@ -132,7 +174,7 @@ class _AddCourseFormState extends State<AddCourseForm> {
                   controller: _courseCodeController,
                   decoration: InputDecoration(
                     labelText: 'Course Code',
-                    hintText: 'e.g., MATH101, PHYS202',
+                    hintText: 'e.g., ESP-101',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

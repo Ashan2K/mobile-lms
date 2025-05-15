@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/models/user_model.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileView extends StatefulWidget {
@@ -12,6 +15,7 @@ class ProfileView extends StatefulWidget {
 
 class _ProfileViewState extends State<ProfileView> {
   UserModel? _profile;
+  File? _profileImage;
 
   Future<UserModel?> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
@@ -23,6 +27,33 @@ class _ProfileViewState extends State<ProfileView> {
     } else {
       // If no token or user data is found, return null
       return null;
+    }
+  }
+
+  Future<String> getDeviceId() async {
+    final deviceInfo = DeviceInfoPlugin();
+
+    if (Platform.isAndroid) {
+      final android = await deviceInfo.androidInfo;
+      print(android.id);
+      return android.id;
+    } else if (Platform.isIOS) {
+      final ios = await deviceInfo.iosInfo;
+      return ios.identifierForVendor ?? 'unknown';
+    }
+    return 'unknown_device';
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+
+      // Optional: save to local storage or upload to server
     }
   }
 
@@ -72,23 +103,29 @@ class _ProfileViewState extends State<ProfileView> {
                                     border: Border.all(
                                         color: Colors.white, width: 4),
                                     color: Colors.grey[200],
-                                    image: const DecorationImage(
-                                      image:
-                                          AssetImage('lib/images/profile.jpeg'),
+                                    image: DecorationImage(
+                                      image: _profileImage != null
+                                          ? FileImage(_profileImage!)
+                                              as ImageProvider
+                                          : const AssetImage(
+                                              'lib/images/profile.jpeg'),
                                       fit: BoxFit.cover,
                                     ),
                                   ),
                                 ),
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.camera_alt,
-                                    color: Colors.blue[700],
-                                    size: 20,
+                                GestureDetector(
+                                  onTap: _pickImage,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.camera_alt,
+                                      color: Colors.blue[700],
+                                      size: 20,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -168,10 +205,16 @@ class _ProfileViewState extends State<ProfileView> {
                         ),
                         const SizedBox(height: 16),
                         _buildActionButton(
+                          Icons.edit,
+                          'Edit User Name',
+                          getDeviceId,
+                        ),
+                        _buildActionButton(
                           Icons.lock_outline,
                           'Change Password',
-                          () {},
+                          _showChangePasswordDialog,
                         ),
+
                         _buildActionButton(
                           Icons.notifications_outlined,
                           'Notification Settings',
@@ -196,6 +239,121 @@ class _ProfileViewState extends State<ProfileView> {
           }
         },
       ),
+    );
+  }
+
+//   void _showEditUsernameDialog() {
+//   final TextEditingController fnameController =
+//       TextEditingController(text: _profile?.fname);
+//   final TextEditingController lnameController =
+//       TextEditingController(text: _profile?.lname);
+
+//   showDialog(
+//     context: context,
+//     builder: (context) {
+//       return AlertDialog(
+//         title: const Text('Edit User Name'),
+//         content: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           children: [
+//             TextField(
+//               controller: fnameController,
+//               decoration: const InputDecoration(labelText: 'First Name'),
+//             ),
+//             TextField(
+//               controller: lnameController,
+//               decoration: const InputDecoration(labelText: 'Last Name'),
+//             ),
+//           ],
+//         ),
+//         actions: [
+//           TextButton(
+//             onPressed: () => Navigator.pop(context),
+//             child: const Text('Cancel'),
+//           ),
+//           ElevatedButton(
+//             onPressed: () {
+//               setState(() {
+//                 _profile = _profile?.copyWith(
+//                   fname: fnameController.text,
+//                   lname: lnameController.text,
+//                 );
+//               });
+//               // Here you should also save the changes back to SharedPreferences or your backend
+//               Navigator.pop(context);
+//             },
+//             child: const Text('Save'),
+//           ),
+//         ],
+//       );
+//     },
+//   );
+// }
+
+  void _showChangePasswordDialog() {
+    final TextEditingController currentPasswordController =
+        TextEditingController();
+    final TextEditingController newPasswordController = TextEditingController();
+    final TextEditingController confirmPasswordController =
+        TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Change Password'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: currentPasswordController,
+                decoration:
+                    const InputDecoration(labelText: 'Current Password'),
+                obscureText: true,
+              ),
+              TextField(
+                controller: newPasswordController,
+                decoration: const InputDecoration(labelText: 'New Password'),
+                obscureText: true,
+              ),
+              TextField(
+                controller: confirmPasswordController,
+                decoration:
+                    const InputDecoration(labelText: 'Confirm New Password'),
+                obscureText: true,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel',
+                  style: TextStyle(color: Color.fromARGB(255, 57, 57, 57))),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (newPasswordController.text ==
+                    confirmPasswordController.text) {
+                  // Validate and send password change request here
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Password changed successfully')));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Passwords do not match')));
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[700],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  )),
+              child:
+                  const Text('Change', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 

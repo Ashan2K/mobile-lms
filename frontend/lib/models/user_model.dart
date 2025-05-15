@@ -10,6 +10,7 @@ class UserModel {
   final String? status;
   final String? imageUrl;
   final String? stdId;
+  final String? qrCode;
 
   UserModel({
     required this.id,
@@ -21,6 +22,7 @@ class UserModel {
     this.status,
     this.imageUrl,
     this.stdId,
+    this.qrCode,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -45,6 +47,7 @@ class UserModel {
       email: json['email'],
       role: role,
       phoneNumber: json['phoneNumber'],
+      qrCode: json['qrCodeUrl'],
     );
   }
 
@@ -59,6 +62,7 @@ class UserModel {
       'email': email,
       'role': role.toString().split('.').last,
       'phoneNumber': phoneNumber,
+      'qrCodeUrl': qrCode,
     };
   }
 
@@ -68,7 +72,8 @@ class UserModel {
       'name': fname + " " + lname,
       'status': status,
       'imageUrl': imageUrl,
-      'uid': id
+      'uid': id,
+      'qrCodeUrl': qrCode,
     };
   }
 }
