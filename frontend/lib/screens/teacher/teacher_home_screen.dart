@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/user_model.dart';
+import 'package:frontend/screens/student/recordings_view.dart';
+import 'package:frontend/screens/teacher/notifications_overlay.dart';
+import 'package:frontend/screens/teacher/recordings_view.dart';
 import 'package:frontend/screens/teacher/schedule_view.dart';
 import 'package:frontend/screens/teacher/student_view.dart';
 import 'package:frontend/screens/teacher/mock_exam_view.dart';
@@ -17,6 +20,7 @@ class TeacherHomeScreen extends StatefulWidget {
 
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   UserModel? _user;
+  bool _hasUnreadNotifications = true;
 
   @override
   void initState() {
@@ -37,6 +41,79 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     });
   }
 
+  void _showNotifications() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: NotificationsOverlay(
+          unreadCount: _hasUnreadNotifications ? 1 : 0,
+          onMarkAllRead: () {
+            setState(() {
+              _hasUnreadNotifications = false;
+            });
+            Navigator.pop(context);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBellWithPlusIcon() {
+    return Stack(
+      children: [
+        const Icon(Icons.notifications, color: Colors.black87),
+        Positioned(
+          right: 0,
+          top: 0,
+          child: Stack(
+            children: [
+              if (_hasUnreadNotifications)
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleLogout() async {
+    try {
+      await AuthService.logout();
+      if (!mounted) return;
+
+      // Use pushAndRemoveUntil to clear the navigation stack
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/login',
+        (Route<dynamic> route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error during logout: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,6 +131,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               },
             ),
           ),
+          actions: [
+            IconButton(
+              icon: _buildBellWithPlusIcon(),
+              onPressed: _showNotifications,
+            ),
+          ],
         ),
         drawer: SafeArea(
           child: Drawer(
@@ -109,8 +192,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                          builder: (context) => const MockExamView()),
+                      MaterialPageRoute(builder: (context) => MockExamView()),
                     );
                   },
                 ),
@@ -172,43 +254,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title:
-                      const Text('Logout', style: TextStyle(color: Colors.red)),
+                  leading: const Icon(Icons.logout),
+                  title: const Text('Logout'),
                   onTap: () {
-                    showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                              title: const Text('Logout'),
-                              content: const Text(
-                                  'Are you sure you want to LogOut ?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context); // Navigate to login
-                                  },
-                                  child: const Text('Cancel',
-                                      style: TextStyle(color: Colors.black)),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    if (mounted) {
-                                      Navigator.pop(
-                                          context); // Close the dialog
-                                    }
-                                    await AuthService.logout();
-
-                                    Navigator.pushReplacementNamed(
-                                        context, '/login'); // Navigate to login
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red[700],
-                                  ),
-                                  child: const Text('Logout',
-                                      style: TextStyle(color: Colors.white)),
-                                ),
-                              ],
-                            ));
+                    Navigator.pop(context); // Close drawer first
+                    _handleLogout(); // Then handle logout
                   },
                 ),
               ],
@@ -317,14 +367,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       },
                     ),
                     _buildActionCard(
-                      icon: Icons.analytics,
-                      title: 'Reports',
+                      icon: Icons.video_file,
+                      title: 'Recordings',
                       color: Colors.purple[100]!,
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const ReportsView()),
+                              builder: (context) =>
+                                  const TeacherRecordingsView()),
                         );
                       },
                     ),
