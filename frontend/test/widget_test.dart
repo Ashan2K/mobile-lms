@@ -80,7 +80,8 @@ void main() {
       )).thenThrow(Exception('Network error'));
 
       // Act
-      final result = await AuthService.login('test@email.com', 'password123');
+      final result = await AuthService.login(
+          'test@email.com', 'password123', 'mockClient');
 
       // Assert
       expect(result, isNull);
