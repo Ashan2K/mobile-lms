@@ -64,8 +64,8 @@ void main() {
       )).thenAnswer((_) async => http.Response('Invalid credentials', 401));
 
       // Act
-      final result =
-          await AuthService.login('wrong@email.com', 'wrongpassword');
+      final result = await AuthService.login(
+          'wrong@email.com', 'wrongpassword', 'mockClient');
 
       // Assert
       expect(result, isNull);
