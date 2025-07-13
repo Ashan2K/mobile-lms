@@ -23,7 +23,7 @@ const auth = getAuth();
 class FirebaseAuthController {
   // Register User (Step 1)
   registerUser = async (req, res) => {
-    const { fname, lname, email, phoneNumber, password, role,deviceId } = req.body;
+    const { fname, lname, email, phoneNumber, password, role,deviceId, address1 ,address2 } = req.body;
 
     // Validate input data
     if (!email || !password || !fname || !lname || !role || !phoneNumber) {
@@ -59,7 +59,9 @@ class FirebaseAuthController {
         emailVerified: true,
         phoneVerified: false,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        deviceId
+        deviceId,
+        address1,
+        address2
       });
 
       return res.status(200).json({

@@ -11,14 +11,20 @@ const firebaseConfig = {
   appId: process.env.FIREBASE_APP_ID
 };
 
-firebase.initializeApp(firebaseConfig);
 
 const admin = require('firebase-admin');
-const serviceAccount = require("../firebaseService.json");
+
+const serviceAccount = require('../firebaseService.json'); 
+
+
+firebase.initializeApp(firebaseConfig);
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential: admin.credential.cert(serviceAccount)
 });
+
+
+
 
 exports.enableUserAfterVerification = functions.https.onCall(async (data, context) => {
   const userId = data.uid;
