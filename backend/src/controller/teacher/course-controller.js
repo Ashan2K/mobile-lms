@@ -2,6 +2,7 @@ const express = require('express');
 const admin = require('firebase-admin');
 
 const db = admin.firestore();
+const NotificationController = require('./notification-controller'); 
 
 class CourseController {
     async createCourse(req, res) {
@@ -24,6 +25,20 @@ class CourseController {
                 createdAt: admin.firestore.FieldValue.serverTimestamp(), 
             });
 
+            const tokens = await NotificationController.getUserTokensByRole('student');
+
+            if (tokens.length > 0) {
+                await NotificationController.multicastNotifications(
+                    tokens,
+                    'New Course Available',
+                    `A new course "${courseName}" has been created.`,
+                    {
+                        courseId: courseRef.id,
+                        click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                    }
+                );
+            }
+            
             res.status(200).send('Course created successfully'); // Send success response
 
         } catch (error) {
@@ -57,7 +72,7 @@ class CourseController {
                 };
             });
 
-            res.json(courses); // Send the filtered list of courses
+            res.status(200).json(courses); // Send the filtered list of courses
 
         } catch (error) {
             // Log the error to help with debugging
