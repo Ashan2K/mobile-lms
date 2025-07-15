@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/models/user_model.dart';
 import 'package:frontend/screens/student/recordings_view.dart';
-import 'package:frontend/screens/teacher/notifications_overlay.dart';
+import 'package:frontend/screens/teacher/notifications_overlay.dart'; // NotificationsScreen is now the widget name
 import 'package:frontend/screens/teacher/recordings_view.dart';
 import 'package:frontend/screens/teacher/schedule_view.dart';
 import 'package:frontend/screens/teacher/student_view.dart';
@@ -42,16 +42,17 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   }
 
   void _showNotifications() {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: NotificationsOverlay(
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NotificationsScreen(
           unreadCount: _hasUnreadNotifications ? 1 : 0,
           onMarkAllRead: () {
-            setState(() {
-              _hasUnreadNotifications = false;
-            });
+            if (mounted) {
+              setState(() {
+                _hasUnreadNotifications = false;
+              });
+            }
             Navigator.pop(context);
           },
         ),
@@ -198,7 +199,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.people),
-                  title: const Text('Students'),
+                  title: const Text('Users'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -323,12 +324,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
                     _buildActionCard(
                       icon: Icons.calendar_today,
@@ -368,7 +366,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     ),
                     _buildActionCard(
                       icon: Icons.video_file,
-                      title: 'Recordings',
+                      title: 'Recording',
                       color: Colors.purple[100]!,
                       onTap: () {
                         Navigator.push(
@@ -403,7 +401,16 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                         );
                       },
                     ),
-                  ],
+                  ].map((card) {
+                    // Make each card take 1/3 of the available width minus spacing
+                    return SizedBox(
+                      width: (MediaQuery.of(context).size.width -
+                              16 * 2 -
+                              12 * 2) /
+                          3,
+                      child: card,
+                    );
+                  }).toList(),
                 ),
                 const SizedBox(height: 24),
 
@@ -468,6 +475,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     return InkWell(
       onTap: onTap,
       child: Container(
+        height: 120, // or 130, 140, etc.
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: color,

@@ -17,7 +17,7 @@ dependencies {
 }
 
 
-apply plugin: 'com.google.gms.google-services'  // Make sure this is at the bottom of the file
+ // Make sure this is at the bottom of the file
 
 
 def localProperties = new Properties()
@@ -76,3 +76,5 @@ android {
 flutter {
     source = "../.."
 }
+
+apply plugin: 'com.google.gms.google-services' 

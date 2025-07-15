@@ -1,7 +1,12 @@
+import 'dart:io';
+import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/models/user_model.dart';
 import 'package:frontend/models/user_role.dart';
 import 'package:frontend/services/base_url.dart';
+
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,16 +32,30 @@ class AuthService {
           final user = UserModel.fromJson(data['user']);
           final token = data['token'];
 
+          // After login, you get customToken from backend
+
+          String? idToken =
+              await FirebaseAuth.instance.currentUser!.getIdToken();
+
+          if (idToken == null) {
+            print('Error: idToken is null after login');
+          }
+
+          print(idToken.toString());
+
           final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('idToken', idToken.toString());
           await prefs.setBool('is_logged_in', true);
           await prefs.setString('token', token);
           await prefs.setString('user', json.encode(user.toJson()));
           await prefs.setString('user_role', user.role.toString());
+          await prefs.setString('userId', user.id.toString());
 
           return user;
 
         case 409:
-          throw Exception('Login denied: User is logged in on another device.');
+          throw Exception(
+              'Login denied: User is logged in on another device.your device Id is $deviceId');
 
         case 400:
           throw Exception('Invalid request. Please check your inputs.');
@@ -126,7 +145,9 @@ class AuthService {
       required String phoneNumber,
       required String password,
       required UserRole role,
-      required String deviceId}) async {
+      required String deviceId,
+      required String address1,
+      String? address2}) async {
     try {
       final response = await http.post(
         Uri.parse('$url/api/register'),
@@ -138,7 +159,9 @@ class AuthService {
           'password': password,
           'phoneNumber': phoneNumber,
           'role': role.toString().split('.').last,
-          'deviceId': deviceId
+          'deviceId': deviceId,
+          'address1': address1,
+          'address2': address2
         }),
       );
       if (response != null) {
@@ -206,5 +229,101 @@ class AuthService {
 
   static bool hasRole(UserModel? user, UserRole role) {
     return user?.role == role;
+  }
+
+  static Future<String> uploadFileToFirebase(File file, String folder) async {
+    final String fileName =
+        '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+    final Reference storageRef =
+        FirebaseStorage.instance.ref().child(folder).child(fileName);
+    final SettableMetadata metadata = SettableMetadata(); // <-- Add this line
+    final UploadTask uploadTask =
+        storageRef.putFile(file, metadata); // <-- Pass metadata
+    final TaskSnapshot snapshot = await uploadTask;
+    return await snapshot.ref.getDownloadURL();
+  }
+
+  static Future<dynamic> uploadImage(File imageFile) async {
+    try {
+      final String downloadUrl =
+          await uploadFileToFirebase(imageFile, 'profile_pictures');
+      print("Image uploaded successfully: $downloadUrl");
+
+      UserModel? user = await getCurrentUser();
+      String? token = await getToken();
+
+      if (user == null) {
+        throw Exception('User not found. Please log in again.');
+      }
+
+      if (token == null) {
+        throw Exception('Authentication token not found. Please log in again.');
+      }
+
+      final response = await http.post(
+        Uri.parse('$url/api/update-profile-pic'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({'userId': user.id, 'fileUrl': downloadUrl}),
+      );
+
+      print('API Response Status: ${response.statusCode}');
+      print('API Response Body: ${response.body}');
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update profile picture: ${response.body}');
+      }
+
+      final data = json.decode(response.body);
+      return data;
+    } catch (e) {
+      throw Exception('Error uploading image: $e');
+    }
+  }
+
+  static Future<UserModel?> getUserById(String userId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$url/api/getProfile'),
+        body: json.encode({'userId': userId}),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        Map<String, dynamic> userMap = data;
+        return UserModel.fromJson(userMap);
+      } else {
+        throw Exception('Failed to fetch user: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error fetching user by ID: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> changePassword(String idToken, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$url/api/change-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
+        body: json.encode({
+          'newPassword': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return true; // Password changed successfully
+      } else {
+        throw Exception('Failed to change password: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error changing password: $e');
+      return false; // Return false on failure
+    }
   }
 }

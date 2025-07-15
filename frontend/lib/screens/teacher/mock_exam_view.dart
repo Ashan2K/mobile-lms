@@ -7,6 +7,8 @@ import '../../providers/question_bank_provider.dart';
 import '../../config/constants.dart';
 import 'add_mcq_question.dart';
 import 'add_audio_question.dart';
+import 'mock_exam_creation_dialog.dart';
+import '../../models/mock_exam.dart';
 
 class MockExamView extends StatefulWidget {
   const MockExamView({Key? key}) : super(key: key);
@@ -23,13 +25,19 @@ class _MockExamViewState extends State<MockExamView>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<QuestionBankProvider>().loadQuestionBanks();
+      context.read<QuestionBankProvider>().loadAudioQuestionBanks();
+      context.read<QuestionBankProvider>().loadMockExams();
     });
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(() {});
     _tabController.dispose();
     super.dispose();
   }
@@ -133,13 +141,64 @@ class _MockExamViewState extends State<MockExamView>
   }
 
   Widget _buildAudioQuestionsTab() {
-    // TODO: Implement audio questions tab
-    return _buildEmptyState("Audio Questions");
+    return Consumer<QuestionBankProvider>(
+      builder: (context, provider, child) {
+        if (provider.isAudioLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (provider.audioError != null) {
+          return _buildErrorState(
+              provider.audioError!, provider.loadAudioQuestionBanks);
+        }
+
+        final questionAudioBanks = provider.questionAudioBanks;
+        if (questionAudioBanks == null || questionAudioBanks.isEmpty) {
+          return _buildEmptyState("Audio Questions");
+        }
+
+        final audioBanks =
+            questionAudioBanks.where((bank) => bank.type == 'audio').toList();
+        if (audioBanks.isEmpty) {
+          return _buildEmptyState("Audio Questions");
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: audioBanks.length,
+          itemBuilder: (context, index) {
+            final bank = audioBanks[index];
+            return _buildQuestionBankCard(bank);
+          },
+        );
+      },
+    );
   }
 
   Widget _buildMockExamsTab() {
-    // TODO: Implement mock exams tab
-    return _buildEmptyState("Mock Exams");
+    return Consumer<QuestionBankProvider>(builder: (context, provider, child) {
+      if (provider.isLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (provider.error != null) {
+        return _buildErrorState(provider.error!, provider.loadMockExams);
+      }
+
+      final mockExams = provider.mockExams;
+      if (mockExams == null || mockExams.isEmpty) {
+        return _buildEmptyState("Mock Exams");
+      }
+
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: mockExams.length,
+        itemBuilder: (context, index) {
+          final exam = mockExams[index];
+          return _buildMockExamCard(exam);
+        },
+      );
+    });
   }
 
   Widget _buildEmptyState(String itemType) {
@@ -255,7 +314,32 @@ class _MockExamViewState extends State<MockExamView>
     );
   }
 
-  void _createAudioQuestion() async {
+  Widget _buildMockExamCard(MockExam exam) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        title: Text(
+          exam.title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            Text('Description: ${exam.description}'),
+            const SizedBox(height: 4),
+            Text('Visibility: ${exam.visibility}'),
+            const SizedBox(height: 4),
+            Text('Created: ${_formatDate(exam.createdAt)}'),
+          ],
+        ),
+        // Add trailing actions if needed
+      ),
+    );
+  }
+
+  Future<void> _createAudioQuestion() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -263,18 +347,30 @@ class _MockExamViewState extends State<MockExamView>
       ),
     );
 
+    debugPrint('Result type: ${result?.runtimeType}');
+    debugPrint('Result: $result');
+
     if (result != null && result is List<AudioQuestion>) {
       final title = await _showTitleDialog();
       if (title != null) {
         try {
-          // TODO: Implement audio question bank creation
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Audio question bank created successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } catch (e) {
+          print('Submitting audio question bank: $title, $result');
+          await context.read<QuestionBankProvider>().createAudioQuestionBank(
+                title,
+                result,
+              );
+          print('Submission successful');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Audio question bank created successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e, stack) {
+          print('Error creating audio question bank: $e');
+          print(stack);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -289,12 +385,17 @@ class _MockExamViewState extends State<MockExamView>
   }
 
   void _createMockExam() {
-    // TODO: Implement mock exam creation
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Mock exam creation coming soon!'),
-        backgroundColor: Colors.blue,
-      ),
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return MockExamCreationDialog(
+          questionBanks:
+              context.read<QuestionBankProvider>().questionBanks ?? [],
+          questionAudioBanks:
+              context.read<QuestionBankProvider>().questionAudioBanks ?? [],
+        );
+      },
     );
   }
 
@@ -387,10 +488,20 @@ class _MockExamViewState extends State<MockExamView>
   }
 
   Future<void> _editQuestionBank(QuestionBank bank) async {
+    if (bank.type != 'mcq') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Editing is only supported for MCQ question banks.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddMCQQuestion(initialQuestions: bank.questions),
+        builder: (context) => AddMCQQuestion(
+            initialQuestions: List<MCQQuestion>.from(bank.questions)),
       ),
     );
     if (result != null && result is List<MCQQuestion>) {

@@ -11,6 +11,8 @@ class UserModel {
   final String? imageUrl;
   final String? stdId;
   final String? qrCode;
+  final String? address; // Assuming address1 is not provided in the model
+  final String? address2; // Assuming address2 is not provided in the model
 
   UserModel({
     required this.id,
@@ -23,6 +25,8 @@ class UserModel {
     this.imageUrl,
     this.stdId,
     this.qrCode,
+    this.address,
+    this.address2,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -48,6 +52,10 @@ class UserModel {
       role: role,
       phoneNumber: json['phoneNumber'],
       qrCode: json['qrCodeUrl'],
+      address:
+          json['address1'], // Assuming address1 is not provided in the model
+      address2:
+          json['address2'], // Assuming address2 is not provided in the model
     );
   }
 
@@ -63,6 +71,8 @@ class UserModel {
       'role': role.toString().split('.').last,
       'phoneNumber': phoneNumber,
       'qrCodeUrl': qrCode,
+      'address1': address, // Assuming address1 is not provided in the model
+      'address2': address2, // Assuming address2 is not provided in the model
     };
   }
 

@@ -1,6 +1,6 @@
 class AppConstants {
   // Set this to true for development/testing with fewer questions
-  static const bool isDevelopment = false;
+  static const bool isDevelopment = true;
 
   // Number of questions required for a question bank
   static const int requiredQuestionsCount = 20;

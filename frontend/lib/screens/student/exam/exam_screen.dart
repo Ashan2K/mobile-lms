@@ -5,9 +5,11 @@ import 'components/exam_app_bar.dart';
 import 'components/question_number_panel.dart';
 import 'components/question_view.dart';
 import 'components/exam_navigation.dart';
+import '../../../models/mock_exam.dart';
 
 class ExamScreen extends StatefulWidget {
-  const ExamScreen({Key? key}) : super(key: key);
+  final MockExam mockExam;
+  const ExamScreen({Key? key, required this.mockExam}) : super(key: key);
 
   @override
   State<ExamScreen> createState() => _ExamScreenState();
@@ -21,7 +23,9 @@ class _ExamScreenState extends State<ExamScreen> {
     super.initState();
     _pageController = PageController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ExamProvider>().loadQuestions();
+      context
+          .read<ExamProvider>()
+          .loadQuestions(widget.mockExam.bankId, widget.mockExam.audioBankId);
       context.read<ExamProvider>().initAudioPlayer();
     });
   }
@@ -52,7 +56,10 @@ class _ExamScreenState extends State<ExamScreen> {
                 children: [
                   const Text('Failed to load questions'),
                   ElevatedButton(
-                    onPressed: examProvider.loadQuestions,
+                    onPressed: () => examProvider.loadQuestions(
+                      widget.mockExam.bankId,
+                      widget.mockExam.audioBankId,
+                    ),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -143,7 +150,7 @@ class _ExamScreenState extends State<ExamScreen> {
                     const Icon(Icons.timer_outlined),
                     const SizedBox(width: 8),
                     const Text(
-                      '45:00',
+                      '46:00',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

@@ -1,5 +1,9 @@
 package com.example.frontend
 
+
+
+import io.flutter.embedding.android.FlutterFragmentActivity
+
 import io.flutter.embedding.android.FlutterActivity
 import android.os.Bundle
 import android.os.Build
@@ -7,7 +11,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 
-class MainActivity: FlutterActivity() {
+class MainActivity: FlutterFragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         

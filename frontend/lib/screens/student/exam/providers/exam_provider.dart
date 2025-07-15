@@ -39,9 +39,9 @@ class ExamProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> loadQuestions() async {
+  Future<void> loadQuestions(String bankId, String audioBankId) async {
     try {
-      _questions = await _examService.getExamQuestions();
+      _questions = await _examService.getMockExamQuestions(bankId, audioBankId);
       _isLoading = false;
       notifyListeners();
     } catch (e) {

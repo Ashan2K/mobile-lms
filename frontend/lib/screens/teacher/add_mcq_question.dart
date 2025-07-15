@@ -71,6 +71,19 @@ class _AddMCQQuestionState extends State<AddMCQQuestion> {
     }
   }
 
+  void _saveCurrentQuestionDraft() {
+    final question = MCQQuestion(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      question: _questionController.text,
+      options: _optionControllers.map((c) => c.text).toList(),
+      correctAnswerIndex: _correctAnswerIndex,
+      imageUrl: _imageFile != null ? _imageFile!.path : null,
+    );
+    setState(() {
+      _questions[_currentQuestionIndex] = question;
+    });
+  }
+
   void _loadQuestion(MCQQuestion question) {
     _questionController.text = question.question;
     for (var i = 0; i < question.options.length; i++) {
@@ -84,9 +97,22 @@ class _AddMCQQuestionState extends State<AddMCQQuestion> {
 
   void _navigateToQuestion(int index) {
     if (index >= 0 && index < AppConstants.questionsCount) {
-      _saveCurrentQuestion();
+      _saveCurrentQuestionDraft();
       setState(() {
         _currentQuestionIndex = index;
+        // Ensure the list is always the correct length
+        while (_questions.length < AppConstants.questionsCount) {
+          _questions.add(null);
+        }
+        if (_questions[index] == null) {
+          _questions[index] = MCQQuestion(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            question: '',
+            options: List.generate(4, (_) => ''),
+            correctAnswerIndex: 0,
+            imageUrl: null,
+          );
+        }
       });
       final question = _questions[index];
       if (question != null) {

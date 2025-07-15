@@ -1,7 +1,12 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import '../../models/audio_question.dart';
 import '../../config/constants.dart';
 import '../student/exam/components/question_number_panel.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class AddAudioQuestion extends StatefulWidget {
   final List<AudioQuestion>? initialQuestions;
@@ -19,64 +24,69 @@ class _AddAudioQuestionState extends State<AddAudioQuestion> {
   final List<AudioQuestion> _questions = [];
   int _currentIndex = 0;
   bool _isSubmitting = false;
+  bool _isUploading = false;
+  final List<TextEditingController> _optionControllers =
+      List.generate(4, (_) => TextEditingController());
+  late final AudioPlayer _audioPlayer;
+  bool _isPlaying = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialQuestions != null) {
-      _questions.addAll(widget.initialQuestions!);
-    }
-    // Add empty questions if in development mode
-    if (AppConstants.isDevelopment && _questions.isEmpty) {
-      for (int i = 0; i < AppConstants.questionsCount; i++) {
-        _questions.add(
-          AudioQuestion(
-            options: List.generate(4, (index) => 'Option ${index + 1}'),
-            answer: 0,
-            audioUrl: 'https://example.com/audio$i.mp3',
-          ),
-        );
-      }
-    }
-    // Add first question if empty
-    if (_questions.isEmpty) {
-      _addQuestion();
-    }
-  }
-
-  void _addQuestion() {
-    setState(() {
-      _questions.add(
-        AudioQuestion(
+    _audioPlayer = AudioPlayer();
+    _audioPlayer.onPlayerStateChanged.listen((PlayerState state) {
+      setState(() {
+        _isPlaying = state == PlayerState.playing;
+      });
+    });
+    // Always initialize with fixed number of empty questions
+    _questions.clear();
+    for (int i = 0; i < AppConstants.questionsCount; i++) {
+      if (widget.initialQuestions != null &&
+          i < widget.initialQuestions!.length) {
+        _questions.add(widget.initialQuestions![i]);
+      } else {
+        _questions.add(AudioQuestion(
           options: List.generate(4, (index) => ''),
           answer: 0,
           audioUrl: '',
-        ),
-      );
-    });
-  }
-
-  void _removeCurrentQuestion() {
-    if (_questions.length <= 1) return; // Keep at least one question
-
-    setState(() {
-      _questions.removeAt(_currentIndex);
-      if (_currentIndex >= _questions.length) {
-        _currentIndex = _questions.length - 1;
+        ));
       }
-    });
+    }
+    _loadCurrentQuestionToControllers();
   }
 
-  void _updateOptions(int optionIndex, String value) {
-    setState(() {
-      _questions[_currentIndex].options[optionIndex] = value;
-    });
+  void _loadCurrentQuestionToControllers() {
+    for (int i = 0; i < 4; i++) {
+      _optionControllers[i].text = _questions[_currentIndex].options[i];
+    }
   }
 
-  void _updateAnswer(int value) {
-    setState(() {
-      _questions[_currentIndex].answer = value;
-    });
+  void _saveCurrentQuestionDraft() {
+    for (int i = 0; i < 4; i++) {
+      _questions[_currentIndex].options[i] = _optionControllers[i].text;
+    }
+    // answer and audioUrl are already updated via UI events
+  }
+
+  void _nextQuestion() {
+    _saveCurrentQuestionDraft();
+    if (_currentIndex < AppConstants.questionsCount - 1) {
+      setState(() {
+        _currentIndex++;
+        _loadCurrentQuestionToControllers();
+      });
+    }
+  }
+
+  void _previousQuestion() {
+    _saveCurrentQuestionDraft();
+    if (_currentIndex > 0) {
+      setState(() {
+        _currentIndex--;
+        _loadCurrentQuestionToControllers();
+      });
+    }
   }
 
   void _updateAudioUrl(String url) {
@@ -86,35 +96,104 @@ class _AddAudioQuestionState extends State<AddAudioQuestion> {
   }
 
   Future<void> _pickAudio() async {
-    // TODO: Implement audio file picking
-    _updateAudioUrl('https://example.com/audio$_currentIndex.mp3');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Audio file picking will be implemented soon!'),
-        backgroundColor: Colors.blue,
-      ),
-    );
-  }
+    // Prevent user from starting another upload while one is in progress
+    if (_isUploading) return;
 
-  void _nextQuestion() {
-    if (_currentIndex < _questions.length - 1) {
-      setState(() {
-        _currentIndex++;
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      // 1. Pick the audio file
+      final FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.audio,
+        allowMultiple: false,
+      );
+
+      // 2. Handle if the user cancels the picker
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('No file selected.'),
+              backgroundColor: Colors.orange),
+        );
+        return; // Early exit
+      }
+
+      final String filePath = result.files.single.path!;
+      final String fileName = result.files.single.name;
+      final File file = File(filePath);
+
+      // 3. Create a unique path in Firebase Storage
+
+      final String uniqueFileName =
+          '${DateTime.now().millisecondsSinceEpoch}_$fileName';
+      final Reference storageRef = FirebaseStorage.instance
+          .ref()
+          .child(
+              'audio_questions') // A top-level folder for all audio questions
+          .child(uniqueFileName);
+
+      print('✅ 2. Created Firebase Storage reference.');
+
+      // 4. Upload the file
+      print('⏳ 3. Starting file upload...');
+      // This is the fix
+      final UploadTask uploadTask = storageRef.putFile(
+        file,
+        SettableMetadata(), // Add this empty metadata object
+      );
+      print('⏳ 3.1. UploadTask created, awaiting completion...');
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        print(
+            'Upload progress: ${snapshot.bytesTransferred}/${snapshot.totalBytes}');
+      }, onError: (e) {
+        print('Upload error: $e');
       });
-    } else if (_questions.length < AppConstants.questionsCount) {
-      _addQuestion();
+      final TaskSnapshot snapshot = await uploadTask;
+      print('✅ 3.2. Upload complete, getting download URL...');
+      final String downloadUrl = await snapshot.ref.getDownloadURL();
+      print('✅ 3.3. Download URL obtained: $downloadUrl');
+
+      // 5. Update the UI with the new URL
+      _updateAudioUrl(
+          downloadUrl); // Your existing function to update the model
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Audio uploaded successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } on FirebaseException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Upload failed: ${e.message}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An unexpected error occurred: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      // 6. Reset the uploading state
       setState(() {
-        _currentIndex++;
+        _isUploading = false;
       });
     }
   }
 
-  void _previousQuestion() {
-    if (_currentIndex > 0) {
-      setState(() {
-        _currentIndex--;
-      });
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    for (var controller in _optionControllers) {
+      controller.dispose();
     }
+    super.dispose();
   }
 
   @override
@@ -134,17 +213,23 @@ class _AddAudioQuestionState extends State<AddAudioQuestion> {
           if (!_isSubmitting)
             TextButton.icon(
               onPressed: () {
-                if (_questions.isEmpty) {
+                _saveCurrentQuestionDraft();
+                final allQuestionsFilled = _questions.every((q) =>
+                    q.audioUrl.isNotEmpty &&
+                    q.options.every((option) => option.isNotEmpty) &&
+                    q.answer >= 0);
+                if (allQuestionsFilled) {
+                  setState(() => _isSubmitting = true);
+                  Navigator.pop(context, _questions);
+                } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Please add at least one question'),
+                      content: Text(
+                          'Please complete all questions before submitting'),
                       backgroundColor: Colors.red,
                     ),
                   );
-                  return;
                 }
-                setState(() => _isSubmitting = true);
-                Navigator.pop(context, _questions);
               },
               icon: const Icon(Icons.check),
               label: const Text('Submit'),
@@ -183,7 +268,7 @@ class _AddAudioQuestionState extends State<AddAudioQuestion> {
               totalQuestions: AppConstants.questionsCount,
               currentQuestionIndex: _currentIndex,
               answeredQuestions: List.generate(
-                _questions.length,
+                AppConstants.questionsCount,
                 (index) =>
                     _questions[index].audioUrl.isNotEmpty &&
                     _questions[index]
@@ -192,7 +277,11 @@ class _AddAudioQuestionState extends State<AddAudioQuestion> {
                     _questions[index].answer >= 0,
               ),
               onQuestionSelected: (index) {
-                setState(() => _currentIndex = index);
+                _saveCurrentQuestionDraft();
+                setState(() {
+                  _currentIndex = index;
+                  _loadCurrentQuestionToControllers();
+                });
               },
               canNavigateToQuestion: (_) => true,
             ),
@@ -210,25 +299,7 @@ class _AddAudioQuestionState extends State<AddAudioQuestion> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                Row(
-                  children: [
-                    if (_questions.length > 1)
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        color: Colors.red[700],
-                        onPressed: _removeCurrentQuestion,
-                      ),
-                    if (_questions.length < AppConstants.questionsCount)
-                      IconButton(
-                        icon: const Icon(Icons.add_circle),
-                        color: Colors.blue[700],
-                        onPressed: () {
-                          _addQuestion();
-                          _nextQuestion();
-                        },
-                      ),
-                  ],
-                ),
+                // No delete/add buttons
               ],
             ),
           ),
@@ -266,22 +337,45 @@ class _AddAudioQuestionState extends State<AddAudioQuestion> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (_questions[_currentIndex].audioUrl.isNotEmpty)
+                            // Show a loading spinner if uploading, otherwise show the buttons
+                            if (_isUploading)
+                              const Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 3),
+                                ),
+                              )
+                            else ...[
+                              // The '...' is the collection-if operator
+                              if (_questions[_currentIndex].audioUrl.isNotEmpty)
+                                IconButton(
+                                  icon: Icon(_isPlaying
+                                      ? Icons.pause
+                                      : Icons.play_arrow),
+                                  onPressed: () {
+                                    if (_questions[_currentIndex]
+                                        .audioUrl
+                                        .isNotEmpty) {
+                                      if (_isPlaying) {
+                                        _audioPlayer.pause();
+                                      } else {
+                                        _audioPlayer.stop();
+                                        _audioPlayer.play(UrlSource(
+                                            _questions[_currentIndex]
+                                                .audioUrl));
+                                      }
+                                    }
+                                  },
+                                ),
                               IconButton(
-                                icon: const Icon(Icons.play_arrow),
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content:
-                                          Text('Audio playback coming soon!'),
-                                    ),
-                                  );
-                                },
+                                icon: const Icon(Icons.upload),
+                                onPressed:
+                                    _pickAudio, // This now triggers the real upload
                               ),
-                            IconButton(
-                              icon: const Icon(Icons.upload),
-                              onPressed: _pickAudio,
-                            ),
+                            ],
                           ],
                         ),
                       ),
@@ -290,23 +384,26 @@ class _AddAudioQuestionState extends State<AddAudioQuestion> {
                       ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _questions[_currentIndex].options.length,
+                        itemCount: 4,
                         itemBuilder: (context, optionIndex) {
                           return RadioListTile<int>(
                             title: TextFormField(
-                              initialValue: _questions[_currentIndex]
-                                  .options[optionIndex],
+                              controller: _optionControllers[optionIndex],
                               decoration: InputDecoration(
                                 hintText: 'Option ${optionIndex + 1}',
                                 border: const UnderlineInputBorder(),
                               ),
-                              onChanged: (value) =>
-                                  _updateOptions(optionIndex, value),
+                              onChanged: (value) {
+                                _questions[_currentIndex].options[optionIndex] =
+                                    value ?? '';
+                              },
                             ),
                             value: optionIndex,
                             groupValue: _questions[_currentIndex].answer,
                             onChanged: (value) {
-                              if (value != null) _updateAnswer(value);
+                              setState(() {
+                                _questions[_currentIndex].answer = value!;
+                              });
                             },
                           );
                         },

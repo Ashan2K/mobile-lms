@@ -20,18 +20,25 @@ dependencies:
   provider: ^6.1.1
   qr_flutter: ^4.1.0
   table_calendar: ^3.2.0
-  firebase_core: ^2.18.0
-  firebase_auth: ^4.11.1
-  cloud_functions: ^4.4.1
-  cloud_firestore: ^4.15.1
   connectivity_plus: ^4.0.0
   get: ^4.7.2
   image_picker: ^1.0.7
-  firebase_messaging: ^14.7.10
   flutter_local_notifications: ^16.3.0
   permission_handler: ^11.3.1
-  mobile_scanner: ^6.0.7
+  mobile_scanner: ^6.0.10
   device_info_plus: ^10.0.0
+  file_picker: ^8.0.6
+  video_player: ^2.9.5
+  flutter_stripe: ^9.0.0
+  url_launcher: ^6.2.5
+
+  # Correct, single list of Firebase Packages
+  firebase_core:
+  firebase_auth:
+  cloud_firestore:
+  firebase_storage:
+  firebase_messaging:
+  cloud_functions:
   
 
 
@@ -41,6 +48,13 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   mockito: ^5.4.4
   build_runner: ^2.4.8
+  flutter_launcher_icons: ^0.13.1
+
+flutter_icons:
+    android: true
+    ios: true
+    image_path: "lib/images/koreanlogo.png"
+    min_sdk_android: 21
 
 flutter:
   uses-material-design: true

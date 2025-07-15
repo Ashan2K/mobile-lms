@@ -17,6 +17,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _address1Controller = TextEditingController();
+  final TextEditingController _address2Controller = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -40,6 +42,15 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _signUp() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    if (_passwordController.text.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter a password';
+      });
+      return;
+    }
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() {
         _errorMessage = 'Passwords do not match';
@@ -62,7 +73,9 @@ class _SignupScreenState extends State<SignupScreen> {
           phoneNumber: _phoneNumber.phoneNumber!,
           password: _passwordController.text,
           role: UserRole.student,
-          deviceId: deviceId);
+          deviceId: deviceId,
+          address1: _address1Controller.text,
+          address2: _address2Controller.text);
       debugPrint(result['data']['phoneNumber']);
       if (result != null) {
         // Navigate to OTP screen
@@ -147,6 +160,12 @@ class _SignupScreenState extends State<SignupScreen> {
                     controller: _firstNameController,
                     hintText: 'First Name',
                     icon: Icons.person_outline,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your first name';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
 
@@ -154,6 +173,12 @@ class _SignupScreenState extends State<SignupScreen> {
                     controller: _lastNameController,
                     hintText: 'Last Name',
                     icon: Icons.person_outline,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your last name';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
 
@@ -162,6 +187,35 @@ class _SignupScreenState extends State<SignupScreen> {
                     hintText: 'Email',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  _buildInputField(
+                    controller: _address1Controller,
+                    hintText: 'Address Line 1',
+                    icon: Icons.home_outlined,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your address';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  _buildInputField(
+                    controller: _address2Controller,
+                    hintText: 'Address Line 2 (Optional)',
+                    icon: Icons.home_outlined,
                   ),
                   const SizedBox(height: 16),
 
@@ -300,6 +354,7 @@ class _SignupScreenState extends State<SignupScreen> {
     required IconData icon,
     bool isPassword = false,
     TextInputType? keyboardType,
+    String? Function(String?)? validator,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -313,10 +368,11 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         ],
       ),
-      child: TextField(
+      child: TextFormField(
         controller: controller,
         obscureText: isPassword,
         keyboardType: keyboardType,
+        validator: validator,
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(color: Colors.grey[400]),

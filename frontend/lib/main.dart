@@ -2,6 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:frontend/screens/fees_marker/fees_marker_home_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/screens/student/home_screen.dart';
 import 'package:frontend/screens/teacher/teacher_home_screen.dart';
@@ -64,6 +66,8 @@ Future<void> showNotification({String? title, String? body}) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Stripe.publishableKey =
+      'pk_test_51Rj3e5QrK8x3FXFTVMO77CdFjvJ4KVGsF1QerPQmTsEOWZiKhPluMwn0bdCziSrTSPibFmWtYB4YanTCz8X0hvDp00yt0v2293';
   await Firebase.initializeApp();
 
   // Initialize Firebase Messaging
@@ -136,6 +140,8 @@ class MainApp extends StatelessWidget {
         return const HomeScreen();
       case UserRole.teacher:
         return const TeacherHomeScreen();
+      case UserRole.feesMarker:
+        return const FeesMarkerHomeScreen();
       default:
         return LoginScreen();
     }

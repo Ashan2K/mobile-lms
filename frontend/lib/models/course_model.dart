@@ -1,4 +1,5 @@
 class CourseModel {
+  String? courseId;
   String courseName;
   String courseCode;
   String description;
@@ -9,6 +10,7 @@ class CourseModel {
   DateTime? creatDate;
 
   CourseModel({
+    this.courseId,
     required this.courseName,
     required this.courseCode,
     required this.description,
@@ -21,6 +23,7 @@ class CourseModel {
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
     return CourseModel(
+        courseId: json['courseId'] ?? json['id'],
         courseName: json['courseName'],
         courseCode: json['courseCode'],
         description: json['description'],
@@ -32,6 +35,7 @@ class CourseModel {
 
   Map<String, dynamic> toJson() {
     return {
+      'courseId': courseId,
       'courseName': courseName,
       'courseCode': courseCode,
       'description': description,

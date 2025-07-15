@@ -209,30 +209,6 @@ class _FeesMarkerHomeScreenState extends State<FeesMarkerHomeScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // Recent Transactions
-              const Text(
-                'Recent Transactions',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildTransactionCard(
-                studentName: 'John Doe',
-                amount: 'Rs. 5,000',
-                date: 'Today',
-                status: 'Completed',
-              ),
-              const SizedBox(height: 12),
-              _buildTransactionCard(
-                studentName: 'Jane Smith',
-                amount: 'Rs. 3,500',
-                date: 'Yesterday',
-                status: 'Pending',
-              ),
             ],
           ),
         ),
