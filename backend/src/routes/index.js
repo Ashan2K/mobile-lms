@@ -12,6 +12,7 @@ const paymentController = require('../controller/payement/payment-controller');
 const scheduleController = require('../controller/teacher/schedule-controller');
 const userPro = require('../controller/student/user-profile');
 const attendanceController = require('../controller/attendance/attendance-controller');
+const studentProfileController = require('../controller/student/profile-controller');
 
 
 router.post('/api/register', firebaseAuthController.registerUser);
@@ -23,6 +24,7 @@ router.post('/api/verify-otp', firebaseAuthController.verifyOtp);
 router.post('/api/load-student',studentManageController.loadStudent);
 router.post('/api/block-student', studentManageController.blockUnblockStudent);
 router.post('/api/getprofile',firebaseAuthController. getUserProfile);
+router.post('/api/change-password', firebaseAuthController.changePassword);
 
 router.post('/api/create-course', courseController.createCourse);
 router.post('/api/load-course', courseController.loadCourse);
@@ -67,6 +69,9 @@ router.post('/api/get-course-due-paymentsById', userPro.getCourseDuepaymentsById
 
 router.post('/api/mark-attendance', attendanceController.markAttendance);
 router.post('/api/get-attendance-of-user', attendanceController.getAttendanceOfUser);
+
+
+router.post('/api/update-profile-pic', studentProfileController.updateProfilePicture);
 
 
 

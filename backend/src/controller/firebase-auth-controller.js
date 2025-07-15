@@ -23,7 +23,7 @@ const auth = getAuth();
 class FirebaseAuthController {
   // Register User (Step 1)
   registerUser = async (req, res) => {
-    const { fname, lname, email, phoneNumber, password, role,deviceId, address1 ,address2 } = req.body;
+    const { fname, lname, email, phoneNumber, password, role, deviceId, address1, address2 } = req.body;
 
     // Validate input data
     if (!email || !password || !fname || !lname || !role || !phoneNumber) {
@@ -44,7 +44,7 @@ class FirebaseAuthController {
       const studentId = await this.generateStudentId();
 
 
-      
+
 
       // Save user data to Firestore
       await admin.firestore().collection('users').doc(userRecord.uid).set({
@@ -113,7 +113,7 @@ class FirebaseAuthController {
         console.error('Error generating QR code:', err);
       } else {
         console.log('QR Code URL:', url);
-        return url;  
+        return url;
       }
     });
   };
@@ -154,7 +154,7 @@ class FirebaseAuthController {
     }
   }
 
-  verifyOtp = async (req, res)=> {
+  verifyOtp = async (req, res) => {
     const { phoneNumber, otp, userId } = req.body;
 
     if (!phoneNumber || !otp) {
@@ -216,7 +216,7 @@ class FirebaseAuthController {
       });
     });
   }
-  
+
 
   loginUser(req, res) {
     const { email, password, deviceId } = req.body;
@@ -242,10 +242,10 @@ class FirebaseAuthController {
 
           const userData = userDoc.data();
 
-          if(userData.role == "student"){
-            if(deviceId != userData.deviceId){
+          if (userData.role == "student") {
+            if (deviceId != userData.deviceId) {
               console.error("device not Match")
-              return res.status(409).json({error: "device not Match"});
+              return res.status(409).json({ error: "device not Match" });
             }
 
           }
@@ -278,7 +278,7 @@ class FirebaseAuthController {
               imageUrl: userData.imageUrl,
               status: userData.status,
               qrCodeUrl: userData.qrCodeUrl,
-              deviceId:userData.deviceId
+              deviceId: userData.deviceId
             },
             token: customToken // Also send token in response body
           });
@@ -325,7 +325,7 @@ class FirebaseAuthController {
   }
 
   getUserProfile(req, res) {
-    const userId = req.user.uid; // Assuming you have middleware that adds user to req
+    const userId = req.body.userId; // Assuming you have middleware that adds user to req
 
     admin.firestore()
       .collection('users')
@@ -335,7 +335,22 @@ class FirebaseAuthController {
         if (!doc.exists) {
           return res.status(404).json({ error: "User not found" });
         }
-        res.status(200).json(doc.data());
+        console.log(doc.data());
+        res.status(200).json({
+          uid: doc.id,
+          email: doc.data().email,
+          phoneNumber: doc.data().phoneNumber,
+          role: doc.data().role,
+          fname: doc.data().fname,
+          lname: doc.data().lname,
+          stdId: doc.data().studentId,
+          imageUrl: doc.data().imageUrl,
+          status: doc.data().status,
+          qrCodeUrl: doc.data().qrCodeUrl,
+          deviceId: doc.data().deviceId,
+          address1: doc.data().address1,
+          address2: doc.data().address2
+        });
       })
       .catch((error) => {
         console.error(error);
@@ -367,6 +382,34 @@ class FirebaseAuthController {
         res.status(500).json({ error: "Error updating user profile" });
       });
   }
+
+  async changePassword(req, res) {
+    const idToken = req.headers.authorization?.split("Bearer ")[1];
+    const { newPassword } = req.body;
+
+    if (!idToken) {
+      return res.status(401).json({ error: "Unauthorized: No token provided" });
+    }
+
+    if (!newPassword) {
+      return res.status(422).json({ error: "New password is required" });
+    }
+
+    try {
+      // Verify the user's identity using the ID token
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      const uid = decodedToken.uid;
+
+      // Update the user's password
+      await admin.auth().updateUser(uid, { password: newPassword });
+
+      return res.status(200).json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      return res.status(500).json({ error: "Error changing password" });
+    }
+  }
+
 }
 
 module.exports = new FirebaseAuthController();
