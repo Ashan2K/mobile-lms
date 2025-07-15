@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/models/user_model.dart';
+import 'package:frontend/services/auth_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,14 +17,28 @@ class ProfileView extends StatefulWidget {
 
 class _ProfileViewState extends State<ProfileView> {
   UserModel? _profile;
-  File? _profileImage;
+  File? _profileImage; // Make nullable
+
+  // Helper to get the correct profile image
+  ImageProvider getProfileImage() {
+    if (_profile?.imageUrl != null) {
+      // User has a profile image URL
+      return NetworkImage(_profile!.imageUrl!);
+    } else {
+      // Default network image
+      return NetworkImage(
+          'https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff');
+    }
+  }
 
   Future<UserModel?> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    String userJson = prefs.getString("user") ?? "{}";
-    if (userJson != null) {
-      Map<String, dynamic> userMap = json.decode(userJson);
-      UserModel user = UserModel.fromJson(userMap);
+    String userId = prefs.getString("userId") ?? "{}";
+    print("User ID from SharedPreferences: $userId");
+    final response = await AuthService.getUserById(userId);
+    if (response != null) {
+      UserModel user = response;
+      print(user.imageUrl);
       return user;
     } else {
       // If no token or user data is found, return null
@@ -53,7 +69,110 @@ class _ProfileViewState extends State<ProfileView> {
         _profileImage = File(pickedFile.path);
       });
 
-      // Optional: save to local storage or upload to server
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      try {
+        final response = await AuthService.uploadImage(_profileImage!);
+        print('Upload response: $response');
+
+        // Hide loading indicator
+        Navigator.of(context).pop();
+
+        if (response != null) {
+          // Handle successful upload
+          print('Image uploaded successfully');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Reload profile to get new imageUrl
+          final updatedProfile = await _loadProfile();
+          setState(() {
+            _profile = updatedProfile;
+            _profileImage = null; // Clear picked image after upload
+          });
+        } else {
+          // Handle error
+          print('Failed to upload image');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to upload image'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        // Hide loading indicator
+        Navigator.of(context).pop();
+
+        print('Error uploading image: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Error uploading image: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _changePassword(String newPassword) async {
+    try {
+      // Get your backend token from SharedPreferences or your auth state
+      final prefs = await SharedPreferences.getInstance();
+      final backendToken =
+          prefs.getString('idToken'); // This is your custom backend token
+
+      if (backendToken == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Not authenticated. Please log in again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Call your backend to change the password
+      final response =
+          await AuthService.changePassword(backendToken, newPassword);
+
+      if (response) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password changed successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to change password'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error changing password: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error changing password: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -104,11 +223,7 @@ class _ProfileViewState extends State<ProfileView> {
                                         color: Colors.white, width: 4),
                                     color: Colors.grey[200],
                                     image: DecorationImage(
-                                      image: _profileImage != null
-                                          ? FileImage(_profileImage!)
-                                              as ImageProvider
-                                          : const AssetImage(
-                                              'lib/images/profile.jpeg'),
+                                      image: getProfileImage(),
                                       fit: BoxFit.cover,
                                     ),
                                   ),
@@ -190,7 +305,7 @@ class _ProfileViewState extends State<ProfileView> {
                         _buildInfoItem(Icons.perm_identity, 'Student Id',
                             _profile?.stdId ?? ''),
                         _buildInfoItem(Icons.location_on_outlined, 'Address',
-                            'matara, sri lanka'),
+                            _profile?.address ?? 'Not provided'),
 
                         const SizedBox(height: 32),
 
@@ -334,10 +449,8 @@ class _ProfileViewState extends State<ProfileView> {
               onPressed: () {
                 if (newPasswordController.text ==
                     confirmPasswordController.text) {
-                  // Validate and send password change request here
+                  _changePassword(newPasswordController.text);
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Password changed successfully')));
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Passwords do not match')));
