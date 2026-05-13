@@ -42,9 +42,3 @@ This project is a **mobile-based Learning Management System (LMS)** designed for
   flutter run
   ```
   
- ## 📚 Contributors
-- TG/2021/1063 - K.K.R.Ashan (Full Stack Developer)
-- TG/2021/1024 - Buddhika Naullage (Full Stack Developer)
-- TG/2021/1058 - Sachin Joshap (Full Stack Developer)
-- TG/2021/1034 - Sasindu Jehan (Full Stack Developer)
-  
